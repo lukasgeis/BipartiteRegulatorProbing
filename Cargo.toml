@@ -1,0 +1,15 @@
+[package]
+name = "bpr"
+version = "0.1.0"
+authors = ["Lukas Geis <lukasgeis@gmx.de>"]
+license = "MIT"
+edition = "2021"
+
+[dependencies]
+structopt = { version = "0.3", default-features = false }
+rand = "0.8.3"
+
+[[bin]]
+name = "max-edge"
+path = "src/bin/max.rs"
+test = false
