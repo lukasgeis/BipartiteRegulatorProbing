@@ -1,9 +1,4 @@
-/// Checks if two numbers of f64 are close enough to let their difference be considered a numerical error
-pub fn is_close(a: f64, b: f64, tol: Option<f64>) -> bool {
-    (b - a).abs() < tol.unwrap_or(1e-09)
-}
-
-pub type Probability = f64;
+use crate::helper::*;
 
 /// Discrete Distribution over [0,1,...,v - 1]
 #[derive(Debug, Clone, PartialEq)]
@@ -11,11 +6,11 @@ pub struct Distribution {
     /// Size of Support
     v: usize,
     /// Exact Probabilities
-    ep: Vec<Probability>,
+    exact_probabilities: Vec<Probability>,
     /// Cumulative Ascending Probabilities
-    ap: Vec<Probability>,
-    /// Cumulative Descending Probabilities
-    dp: Vec<Probability>,
+    cumulative_probabilities: Vec<Probability>,
+    /// Cumulative Ascending Expected Values
+    expected_values: Vec<f64>,
 }
 
 impl Distribution {
@@ -26,33 +21,33 @@ impl Distribution {
         {
             return Self {
                 v: 1,
-                ep: vec![1.0],
-                ap: vec![1.0],
-                dp: vec![1.0],
+                exact_probabilities: vec![1.0],
+                cumulative_probabilities: vec![1.0],
+                expected_values: vec![0.0],
             };
         }
 
         let v = list.len();
 
         let mut ep: Vec<Probability> = Vec::with_capacity(v);
-        let mut ap: Vec<Probability> = Vec::with_capacity(v);
-        let mut dp: Vec<Probability> = Vec::with_capacity(v);
+        let mut cp: Vec<Probability> = Vec::with_capacity(v);
+        let mut ev: Vec<f64> = Vec::with_capacity(v);
 
         ep.push(list[0]);
-        ap.push(list[0]);
-        dp.push(list[v - 1]);
+        cp.push(list[0]);
+        ev.push(0.0);
 
         for k in 1..v {
             ep.push(list[k]);
-            ap.push(ap[k - 1] + list[k]);
-            dp.push(dp[k - 1] + list[v - k - 1]);
+            cp.push(cp[k - 1] + list[k]);
+            ev.push(ev[k - 1] + k as f64 * list[k]);
         }
 
         Self {
             v: v,
-            ep: ep,
-            ap: ap,
-            dp: dp.into_iter().rev().collect(),
+            exact_probabilities: ep,
+            cumulative_probabilities: cp,
+            expected_values: ev,
         }
     }
 
@@ -66,7 +61,7 @@ impl Distribution {
         if k >= self.v {
             0.0 as Probability
         } else {
-            self.ep[k]
+            self.exact_probabilities[k]
         }
     }
 
@@ -75,7 +70,7 @@ impl Distribution {
         if k >= self.v {
             1.0 as Probability
         } else {
-            self.ap[k]
+            self.cumulative_probabilities[k]
         }
     }
 
@@ -83,8 +78,33 @@ impl Distribution {
     fn greater(&self, k: usize) -> Probability {
         if k >= self.v {
             0.0 as Probability
+        } else if k == 0 {
+            1.0 as Probability
         } else {
-            self.dp[k]
+            1.0 - self.cumulative_probabilities[k - 1]
+        }
+    }
+
+    /// Get expected value of distribution
+    fn expected_value(&self) -> f64 {
+        self.expected_values[self.v - 1]
+    }
+
+    /// Get expected value of values less or equal to k
+    fn expected_less(&self, k: usize) -> f64 {
+        if k < 0 {
+            0.0 as f64
+        } else {
+            self.expected_values[k]
+        }
+    }
+
+    /// Get expected value of values greater or equal to k
+    fn expected_greater(&self, k: usize) -> f64 {
+        if k <= 0 {
+            self.expected_values[self.v - 1]
+        } else {
+            self.expected_values[self.v - 1] - self.expected_values[k - 1]
         }
     }
 }
@@ -173,9 +193,9 @@ mod tests {
                 Distribution::from_list(&values),
                 Distribution {
                     v: 1,
-                    ep: vec![1.0],
-                    ap: vec![1.0],
-                    dp: vec![1.0],
+                    exact_probabilities: vec![1.0],
+                    cumulative_probabilities: vec![1.0],
+                    expected_values: vec![0.0],
                 }
             );
         }
@@ -233,7 +253,8 @@ mod tests {
             0.00390625, 0.13671875, 0.234375, 0.125, 0.125, 0.125, 0.125, 0.125,
         ];
 
-        let proposed_distribution: Vec<Probability> = max_distribution(&distributions).ep;
+        let proposed_distribution: Vec<Probability> =
+            max_distribution(&distributions).exact_probabilities;
 
         for k in 0..8 {
             assert!(is_close(
@@ -256,7 +277,8 @@ mod tests {
             0.00390625, 0.03125, 0.1015625, 0.25, 0.34765625, 0.21875, 0.046875,
         ];
 
-        let proposed_distribution: Vec<Probability> = sum_distribution(&distributions).ep;
+        let proposed_distribution: Vec<Probability> =
+            sum_distribution(&distributions).exact_probabilities;
         for k in 0..7 {
             assert!(is_close(
                 proposed_distribution[k],
@@ -264,5 +286,14 @@ mod tests {
                 None
             ));
         }
+    }
+
+    #[test]
+    fn example_expected_values() {
+        let distribution: Distribution = Distribution::from_list(&vec![0.250, 0.500, 0.125, 0.125]);
+
+        assert!(is_close(distribution.expected_value(), 1.125, None));
+        assert!(is_close(distribution.expected_less(2), 0.750, None));
+        assert!(is_close(distribution.expected_greater(2), 0.625, None));
     }
 }

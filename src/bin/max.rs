@@ -4,6 +4,8 @@ use std::path::PathBuf;
 
 use structopt::StructOpt;
 
+use bpr::helper::*;
+
 #[derive(Debug, StructOpt)]
 #[structopt(name = "max-edge", about = "Max-Edge Variant of BPR")]
 struct Opt {
@@ -19,4 +21,6 @@ fn main() {
     println!("{:?}", &t);
 
     println!("{:?}", t.into_iter().sum::<f64>() - 0.3);
+
+    println!("{:?}", boolean_combination(5));
 }
