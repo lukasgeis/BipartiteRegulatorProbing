@@ -1,5 +1,7 @@
 use crate::helper::*;
 
+use rand::*;
+
 /// Discrete Distribution over [0,1,...,v - 1]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Distribution {
@@ -15,7 +17,7 @@ pub struct Distribution {
 
 impl Distribution {
     /// Creates a new Distribution from a given list of proabilities
-    fn from_list(list: &Vec<Probability>) -> Self {
+    pub fn from_list(list: &Vec<Probability>) -> Self {
         if !is_close(list.into_iter().sum::<Probability>(), 1.0, None)
             || !list.into_iter().all(|p| 0.0 <= *p && *p <= 1.0)
         {
@@ -52,12 +54,12 @@ impl Distribution {
     }
 
     /// Get Size of Support
-    fn size(&self) -> usize {
+    pub fn size(&self) -> usize {
         self.v
     }
 
     /// Get Probability that k is realized
-    fn equal(&self, k: usize) -> Probability {
+    pub fn equal(&self, k: usize) -> Probability {
         if k >= self.v {
             0.0 as Probability
         } else {
@@ -66,7 +68,7 @@ impl Distribution {
     }
 
     /// Get Probability that a value less or equal to k is realized
-    fn less(&self, k: usize) -> Probability {
+    pub fn less(&self, k: usize) -> Probability {
         if k >= self.v {
             1.0 as Probability
         } else {
@@ -75,7 +77,7 @@ impl Distribution {
     }
 
     /// Get Probability that a value greater or equal to k is realized
-    fn greater(&self, k: usize) -> Probability {
+    pub fn greater(&self, k: usize) -> Probability {
         if k >= self.v {
             0.0 as Probability
         } else if k == 0 {
@@ -86,12 +88,12 @@ impl Distribution {
     }
 
     /// Get expected value of distribution
-    fn expected_value(&self) -> f64 {
+    pub fn expected_value(&self) -> f64 {
         self.expected_values[self.v - 1]
     }
 
     /// Get expected value of values less or equal to k
-    fn expected_less(&self, k: usize) -> f64 {
+    pub fn expected_less(&self, k: usize) -> f64 {
         if k < 0 {
             0.0 as f64
         } else {
@@ -100,12 +102,24 @@ impl Distribution {
     }
 
     /// Get expected value of values greater or equal to k
-    fn expected_greater(&self, k: usize) -> f64 {
+    pub fn expected_greater(&self, k: usize) -> f64 {
         if k <= 0 {
             self.expected_values[self.v - 1]
         } else {
             self.expected_values[self.v - 1] - self.expected_values[k - 1]
         }
+    }
+
+    /// Draw value from Distribution
+    pub fn draw_value(&self) -> usize {
+        let random_value: Probability = rand::thread_rng().gen();
+        for k in 0..(self.size() - 1) {
+            if random_value <= self.less(k) {
+                return k;
+            } 
+        }
+
+        self.size() - 1
     }
 }
 
