@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import os
 import math
 import random
@@ -18,7 +16,7 @@ def roundToTwoDecimalPlaces(value: float) -> float:
     return float("{:.2f}".format(value))
 
 
-def generateDistribution(valueSpace: int) -> list[float]:
+def generateDistribution(valueSpace: int):
     """
     Generates a discrete Distribution for a given Value-Space and Number of Probabilities
 
