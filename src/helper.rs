@@ -33,7 +33,7 @@ pub fn boolean_combination(n: usize) -> Vec<Vec<bool>> {
     }
     combinations(n, 2)
         .into_iter()
-        .map(|v| v.into_iter().map(|u| u == 1).collect::<Vec<bool>>())
+        .map(|v| v.into_iter().map(|u| u == 1).rev().collect::<Vec<bool>>())
         .collect::<Vec<Vec<bool>>>()
 }
 

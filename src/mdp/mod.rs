@@ -1,10 +1,11 @@
 use crate::helper::*;
 
-type Reward = f64;
-
 pub trait MDP<State, Action> {
     /// Get initial state of MDP
     fn get_initial_state(&self) -> State;
+
+    /// Get Time Horizon
+    fn get_time_horizon(&self) -> usize;
 
     /// Get all possible states
     fn get_states(&self) -> Vec<State>;
@@ -35,7 +36,11 @@ pub trait MDP<State, Action> {
         for action in self.get_possible_actions(&state) {
             let mut optimal_reward: Reward = self.get_reward(&state, &action);
             for next_state in self.get_possible_transitions(&state, &action) {
-                optimal_reward += next_state.1 * self.get_best_action(&next_state.0, t - 1).unwrap().1;
+                let down_action: Option<(Action, Reward)> =
+                    self.get_best_action(&next_state.0, t - 1);
+                if down_action.is_some() {
+                    optimal_reward += next_state.1 * down_action.unwrap().1;
+                }
             }
             if (&optimal_action).is_none() || optimal_action.as_ref().unwrap().1 < optimal_reward {
                 optimal_action = Some((action, optimal_reward));
@@ -44,8 +49,14 @@ pub trait MDP<State, Action> {
 
         optimal_action
     }
+
+    /// Calculate the optimal policy
+    fn calculate_optimal_policy(&mut self) {
+        self.get_best_action(&self.get_initial_state(), self.get_time_horizon());
+    }
 }
 
+/// Unit-Test with Example-Implementation for PrizeCollection
 mod tests {
     use super::*;
 
@@ -75,6 +86,10 @@ mod tests {
             Some(vec![false; self.n])
         }
 
+        fn get_time_horizon(&self) -> usize {
+            self.n
+        }
+
         fn get_states(&self) -> Vec<PrizeCollectionState> {
             let mut states: Vec<PrizeCollectionState> = boolean_combination(self.n)
                 .into_iter()
@@ -96,7 +111,7 @@ mod tests {
 
             self.get_actions()
                 .into_iter()
-                .filter(|a| !state.as_ref().unwrap()[*a])
+                .filter(|a| !state.as_ref().unwrap()[*a - 1])
                 .collect()
         }
 
@@ -107,19 +122,19 @@ mod tests {
         ) -> Vec<(PrizeCollectionState, Probability)> {
             if state.is_none() {
                 return vec![(None, 1.0)];
-            } else if state.as_ref().unwrap()[*action] {
+            } else if state.as_ref().unwrap()[*action - 1] {
                 return vec![(state.clone(), 1.0)];
             }
 
             let mut transitions: Vec<(PrizeCollectionState, Probability)> = Vec::with_capacity(2);
 
             // EMPTY state transition
-            transitions.push((None, 1.0 - self.p[*action]));
+            transitions.push((None, 1.0 - self.p[*action - 1]));
 
             // Value state transition
             let mut new_subset: Vec<bool> = state.as_ref().unwrap().clone();
-            new_subset[*action] = true;
-            transitions.push((Some(new_subset), self.p[*action]));
+            new_subset[*action - 1] = true;
+            transitions.push((Some(new_subset), self.p[*action - 1]));
 
             transitions
         }
@@ -131,11 +146,11 @@ mod tests {
         ) -> Reward {
             if state.is_none() {
                 return 0.0;
-            } else if state.as_ref().unwrap()[*action] {
+            } else if state.as_ref().unwrap()[*action - 1] {
                 return f64::NEG_INFINITY;
             }
 
-            self.p[*action] * self.r[*action]
+            self.p[*action - 1] * self.r[*action - 1]
         }
 
         fn get_best_action(
@@ -143,15 +158,27 @@ mod tests {
             state: &PrizeCollectionState,
             t: usize,
         ) -> Option<(PrizeCollectionAction, Reward)> {
-            if t > self.n {
+            if t > self.n || state.is_none() {
                 return None;
             } else if self.table[t][boolean_array_to_usize(state.as_ref().unwrap())].is_some() {
                 return self.table[t][boolean_array_to_usize(state.as_ref().unwrap())];
             }
-            let action: Option<(PrizeCollectionAction, Reward)> = self.calculate_optimal_action(state, t);
+            let action: Option<(PrizeCollectionAction, Reward)> =
+                self.calculate_optimal_action(state, t);
             self.table[t][boolean_array_to_usize(state.as_ref().unwrap())] = action;
-            
+
             action
         }
+    }
+
+    #[test]
+    fn example_prizecollection_mdp() {
+        let mut instance: PrizeCollectionMDP =
+            PrizeCollectionMDP::init(2, vec![0.01, 1.0], vec![1000.0, 1.0]);
+        instance.calculate_optimal_policy();
+
+        assert_eq!(instance.table[1][1].unwrap(), (2, 1.0));
+        assert_eq!(instance.table[1][2].unwrap(), (1, 10.0));
+        assert_eq!(instance.table[2][0].unwrap(), (2, 11.0));
     }
 }
