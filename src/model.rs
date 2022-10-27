@@ -1,19 +1,31 @@
 use std::io::{BufRead, Error, ErrorKind};
 
-use crate::{distributions::Distribution, Probability};
+use crate::{
+    distributions::{max_distribution, sum_distribution, Distribution},
+    Probability,
+};
 
+/// Base model for BipartiteRegulatorProbing
 #[derive(Debug)]
 pub struct BipartiteRegulatorProbing {
+    /// Number of Regulators
     na: usize,
+    /// Number of Positions
     nb: usize,
+    /// Size of Support
     vs: usize,
+    /// Name of Graph (almost most certainly Random)
     name: String,
+    /// Distributions for every Edge
     data: Vec<Vec<Distribution>>,
 }
 
 impl BipartiteRegulatorProbing {
+    /// Reads input and returns the parsed instance
     pub fn init<T: BufRead>(reader: T) -> Result<Self, Error> {
+        // Custom Error Messages
         let error = |msg| Err(Error::new(ErrorKind::Other, msg));
+        // Read all lines and remove Comment-Lines (almost certainly not present)
         let mut lines = reader.lines().filter_map(|x| -> Option<String> {
             if let Ok(line) = x {
                 if !line.starts_with("%") {
@@ -23,6 +35,7 @@ impl BipartiteRegulatorProbing {
             None
         });
 
+        // Parse Header
         let (na, nb, vs, name) = {
             if let Some(header) = lines.next() {
                 let fields: Vec<_> = header.split(" ").collect();
@@ -56,6 +69,7 @@ impl BipartiteRegulatorProbing {
             }
         };
 
+        // Parse Distributions
         let mut data: Vec<Vec<Distribution>> = Vec::with_capacity(na);
         for (number, line) in lines.enumerate() {
             if number % nb == 0 {
@@ -107,4 +121,36 @@ impl BipartiteRegulatorProbing {
             data: data,
         })
     }
+
+    /// Get Distribution of Edge
+    pub fn get_distribution(&self, a: usize, b: usize) -> &Distribution {
+        &self.data[a][b]
+    }
+
+    pub fn top_l_probemax(&self, goal: Reduction) -> ToplProbeMax {
+        ToplProbeMax {
+            n: self.na,
+            data: self
+                .data
+                .clone()
+                .into_iter()
+                .map(|v| -> Distribution {
+                    match goal {
+                        Reduction::MAX => return max_distribution(&v),
+                        Reduction::SUM => return sum_distribution(&v),
+                    };
+                })
+                .collect(),
+        }
+    }
+}
+
+pub struct ToplProbeMax {
+    n: usize,
+    data: Vec<Distribution>,
+}
+
+pub enum Reduction {
+    MAX,
+    SUM,
 }
