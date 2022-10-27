@@ -76,7 +76,7 @@ mod tests {
                 n: n,
                 p: probabilities,
                 r: rewards,
-                table: vec![vec![None; 2_usize.pow(n as u32) + 1]; 3],
+                table: vec![vec![None; 2_usize.pow(n as u32) + 1]; n + 1],
             }
         }
     }

@@ -2,7 +2,7 @@
 
 use std::{fs::File, io::BufReader, path::PathBuf};
 
-use bpr::model::BipartiteRegulatorProbing;
+use bpr::model::{BipartiteRegulatorProbing, Reduction};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -23,7 +23,7 @@ fn main() -> std::io::Result<()> {
         None => panic!("No input file was given!"),
     };
 
-    println!("{:?}", bpr);
+    println!("{:?}", bpr.top_l_probemax(Reduction::MAX));
 
     Ok(())
 }

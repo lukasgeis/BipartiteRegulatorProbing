@@ -29,7 +29,9 @@ pub fn combinations(n: usize, values: usize) -> Vec<Vec<usize>> {
         }
     }
 
-    val
+    val.into_iter()
+        .map(|v| v.into_iter().rev().collect::<Vec<usize>>())
+        .collect::<Vec<Vec<usize>>>()
 }
 
 /// Get all possible combinations of true/false of length n (for subset calculations)
@@ -39,7 +41,7 @@ pub fn boolean_combination(n: usize) -> Vec<Vec<bool>> {
     }
     combinations(n, 2)
         .into_iter()
-        .map(|v| v.into_iter().map(|u| u == 1).rev().collect::<Vec<bool>>())
+        .map(|v| v.into_iter().map(|u| u == 1).collect::<Vec<bool>>())
         .collect::<Vec<Vec<bool>>>()
 }
 

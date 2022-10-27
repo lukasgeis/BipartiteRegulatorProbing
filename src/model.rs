@@ -145,6 +145,7 @@ impl BipartiteRegulatorProbing {
     }
 }
 
+#[derive(Debug)]
 pub struct ToplProbeMax {
     n: usize,
     data: Vec<Distribution>,
