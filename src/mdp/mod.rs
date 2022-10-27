@@ -1,4 +1,4 @@
-use crate::helper::*;
+use crate::*;
 
 pub trait MDP<State, Action> {
     /// Get initial state of MDP

@@ -1,10 +1,9 @@
 #![deny(warnings)]
 
-use std::path::PathBuf;
+use std::{fs::File, io::BufReader, path::PathBuf};
 
+use bpr::model::BipartiteRegulatorProbing;
 use structopt::StructOpt;
-
-use bpr::{distributions::Distribution};
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "max-edge", about = "Max-Edge Variant of BPR")]
@@ -13,13 +12,18 @@ struct Opt {
     input: Option<PathBuf>,
 }
 
-fn main() {
+fn main() -> std::io::Result<()> {
     let opt = Opt::from_args();
-    println!("{:?}", &opt.input);
 
-    let x: Distribution = Distribution::from_list(&vec![0.12, 0.38, 0.24, 0.13, 0.07, 0.06]);
+    let bpr: BipartiteRegulatorProbing = match &opt.input {
+        Some(path) => {
+            let file = File::open(path)?;
+            BipartiteRegulatorProbing::init(BufReader::new(file))?
+        }
+        None => panic!("No input file was given!"),
+    };
 
-    for _ in 0..25 {
-        println!("{:?}", x.draw_value());
-    }
+    println!("{:?}", bpr);
+
+    Ok(())
 }

@@ -1,4 +1,4 @@
-use crate::helper::*;
+use crate::*;
 
 use rand::*;
 
@@ -116,7 +116,7 @@ impl Distribution {
         for k in 0..(self.size() - 1) {
             if random_value <= self.less(k) {
                 return k;
-            } 
+            }
         }
 
         self.size() - 1
