@@ -1,3 +1,6 @@
 # Binaries
 /target
 
+# Testing
+testdata
+log/testlog
