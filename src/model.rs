@@ -2,7 +2,7 @@ use std::io::{BufRead, Error, ErrorKind};
 
 use crate::{
     distributions::{max_distribution, sum_distribution, Distribution},
-    Probability,
+    GoalType, Probability,
 };
 
 /// Base model for BipartiteRegulatorProbing
@@ -127,7 +127,21 @@ impl BipartiteRegulatorProbing {
         &self.data[a][b]
     }
 
-    pub fn top_l_probemax(&self, goal: Reduction) -> ToplProbeMax {
+    pub fn create_instance(&self) -> Instance {
+        Instance {
+            model: &self,
+            realization: self
+                .data
+                .clone()
+                .into_iter()
+                .map(|a| -> Vec<usize> {
+                    a.into_iter().map(|b| -> usize { b.draw_value() }).collect()
+                })
+                .collect(),
+        }
+    }
+
+    pub fn top_l_probemax(&self, goal: GoalType) -> ToplProbeMax {
         ToplProbeMax {
             n: self.na,
             data: self
@@ -136,8 +150,9 @@ impl BipartiteRegulatorProbing {
                 .into_iter()
                 .map(|v| -> Distribution {
                     match goal {
-                        Reduction::MAX => return max_distribution(&v),
-                        Reduction::SUM => return sum_distribution(&v),
+                        GoalType::MAX => return max_distribution(&v),
+                        GoalType::SUM => return sum_distribution(&v),
+                        GoalType::COV => panic!("Not implemented yet!"),
                     };
                 })
                 .collect(),
@@ -151,7 +166,41 @@ pub struct ToplProbeMax {
     data: Vec<Distribution>,
 }
 
-pub enum Reduction {
-    MAX,
-    SUM,
+impl ToplProbeMax {
+    pub fn get_distribution(&self, i: usize) -> &Distribution {
+        &self.data[i]
+    }
+}
+
+#[derive(Debug)]
+pub struct Instance<'a> {
+    model: &'a BipartiteRegulatorProbing,
+    realization: Vec<Vec<usize>>,
+}
+
+impl Instance<'_> {
+    pub fn optimal_solution(&self, goal: GoalType, l: usize) -> (Vec<usize>, usize) {
+        let mut regulators: Vec<(usize, usize)> = match goal {
+            GoalType::MAX => self
+                .realization
+                .clone()
+                .into_iter()
+                .enumerate()
+                .map(|(i, a)| (i, a.into_iter().max().unwrap_or(0)))
+                .collect(),
+            GoalType::SUM => self
+                .realization
+                .clone()
+                .into_iter()
+                .enumerate()
+                .map(|(i, a)| (i, a.into_iter().sum()))
+                .collect(),
+            GoalType::COV => return (vec![], 0),
+        };
+        regulators.sort_by(|(_, a), (_, b)| b.cmp(a));
+        regulators.truncate(l);
+
+        let (subset, values): (Vec<usize>, Vec<usize>) = regulators.into_iter().unzip();
+        (subset, values.into_iter().sum())
+    }
 }

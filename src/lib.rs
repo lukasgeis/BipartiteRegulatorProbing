@@ -7,6 +7,12 @@ pub mod model;
 pub type Probability = f64;
 pub type Reward = f64;
 
+pub enum GoalType {
+    MAX,
+    SUM,
+    COV,
+}
+
 /// Checks if two numbers of f64 are close enough to let their difference be considered a numerical error
 pub fn is_close(a: f64, b: f64, tol: Option<f64>) -> bool {
     (b - a).abs() < tol.unwrap_or(1e-09)
