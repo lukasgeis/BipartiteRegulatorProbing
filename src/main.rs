@@ -41,6 +41,7 @@ fn main() -> std::io::Result<()> {
 
     let mut instance: Instance = bpr.create_instance();
     instance.optimal_solution(GoalType::MAX, opt.l);
+    instance.optimal_solution(GoalType::SUM, opt.l);
     instance.namp(GoalType::MAX, opt.k, opt.l);
     instance.namp(GoalType::SUM, opt.k, opt.l);
     println!("{:?}", instance.get_realizations());
