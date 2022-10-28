@@ -44,7 +44,6 @@ fn main() -> std::io::Result<()> {
     instance.optimal_solution(GoalType::SUM, opt.l);
     instance.namp(GoalType::MAX, opt.k, opt.l);
     instance.namp(GoalType::SUM, opt.k, opt.l);
-    println!("{:?}", instance.get_realizations());
     println!("{:?}", instance.get_results());
     
 
