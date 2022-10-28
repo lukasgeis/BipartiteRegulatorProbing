@@ -8,12 +8,23 @@ use structopt::StructOpt;
 #[derive(Debug, StructOpt)]
 #[structopt(name = "max-edge", about = "Max-Edge Variant of BPR")]
 struct Opt {
-    #[structopt(short, long, parse(from_os_str))]
+    #[structopt(long, parse(from_os_str))]
     input: Option<PathBuf>,
+
+    #[structopt(long, parse(from_os_str))]
+    log: Option<PathBuf>,
+
+    #[structopt(long)]
+    mdp: bool,
+
+    #[structopt(short, long, default_value = "1")]
+    l: usize,
 }
 
 fn main() -> std::io::Result<()> {
     let opt = Opt::from_args();
+
+    println!("{:?} -- {:?} -- {:?}", &opt.input, &opt.log, &opt.mdp);
 
     let bpr: BipartiteRegulatorProbing = match &opt.input {
         Some(path) => {
@@ -24,8 +35,8 @@ fn main() -> std::io::Result<()> {
     };
 
     let instance: Instance = bpr.create_instance();
-    println!("{:?}", instance.optimal_solution(bpr::GoalType::MAX, 2));
-    println!("{:?}", instance.optimal_solution(bpr::GoalType::SUM, 2));
+    println!("{:?}", instance.optimal_solution(bpr::GoalType::MAX, opt.l));
+    println!("{:?}", instance.optimal_solution(bpr::GoalType::SUM, opt.l));
     println!("{:?}", &instance);
 
     Ok(())
