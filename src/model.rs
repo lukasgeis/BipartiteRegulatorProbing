@@ -1,8 +1,9 @@
 use std::io::{BufRead, Error, ErrorKind};
 
 use crate::{
+    algorithms::namp_for_probemax,
     distributions::{max_distribution, sum_distribution, Distribution},
-    GoalType, Probability,
+    Algorithm, GoalType, Probability,
 };
 
 /// Base model for BipartiteRegulatorProbing
@@ -18,6 +19,8 @@ pub struct BipartiteRegulatorProbing {
     name: String,
     /// Distributions for every Edge
     data: Vec<Vec<Distribution>>,
+    /// Reductions to Top-l-ProbeMax
+    reductions: Option<(Vec<Distribution>, Vec<Distribution>)>,
 }
 
 impl BipartiteRegulatorProbing {
@@ -113,13 +116,17 @@ impl BipartiteRegulatorProbing {
             data[number / nb].push(Distribution::from_list(&values));
         }
 
-        Ok(BipartiteRegulatorProbing {
+        let mut model: BipartiteRegulatorProbing = BipartiteRegulatorProbing {
             na: na,
             nb: nb,
             vs: vs,
             name: name,
             data: data,
-        })
+            reductions: None,
+        };
+        model.create_reductions();
+
+        Ok(model)
     }
 
     /// Get Distribution of Edge
@@ -127,6 +134,31 @@ impl BipartiteRegulatorProbing {
         &self.data[a][b]
     }
 
+    /// Create Reductions to Top-l-ProbeMax
+    fn create_reductions(&mut self) {
+        if self.reductions.is_none() {
+            let mut new_reductions: (Vec<Distribution>, Vec<Distribution>) =
+                (Vec::with_capacity(self.na), Vec::with_capacity(self.na));
+
+            for a in &self.data {
+                new_reductions.0.push(max_distribution(a));
+                new_reductions.1.push(sum_distribution(a));
+            }
+
+            self.reductions = Some(new_reductions);
+        }
+    }
+
+    /// Get the distribution of the reduction
+    pub fn get_reduction(&self, goal: &GoalType) -> &Vec<Distribution> {
+        match goal {
+            GoalType::MAX => return &self.reductions.as_ref().unwrap().0,
+            GoalType::SUM => return &self.reductions.as_ref().unwrap().1,
+            GoalType::COV => panic!("There is no Coverage-Reduction!"),
+        }
+    }
+
+    /// Creates an instance of the problem
     pub fn create_instance(&self) -> Instance {
         Instance {
             model: &self,
@@ -138,37 +170,8 @@ impl BipartiteRegulatorProbing {
                     a.into_iter().map(|b| -> usize { b.draw_value() }).collect()
                 })
                 .collect(),
+            results: Vec::new(),
         }
-    }
-
-    pub fn top_l_probemax(&self, goal: GoalType) -> ToplProbeMax {
-        ToplProbeMax {
-            n: self.na,
-            data: self
-                .data
-                .clone()
-                .into_iter()
-                .map(|v| -> Distribution {
-                    match goal {
-                        GoalType::MAX => return max_distribution(&v),
-                        GoalType::SUM => return sum_distribution(&v),
-                        GoalType::COV => panic!("Not implemented yet!"),
-                    };
-                })
-                .collect(),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct ToplProbeMax {
-    n: usize,
-    data: Vec<Distribution>,
-}
-
-impl ToplProbeMax {
-    pub fn get_distribution(&self, i: usize) -> &Distribution {
-        &self.data[i]
     }
 }
 
@@ -176,10 +179,15 @@ impl ToplProbeMax {
 pub struct Instance<'a> {
     model: &'a BipartiteRegulatorProbing,
     realization: Vec<Vec<usize>>,
+    results: Vec<(GoalType, Algorithm, Vec<usize>, usize)>,
 }
 
 impl Instance<'_> {
-    pub fn optimal_solution(&self, goal: GoalType, l: usize) -> (Vec<usize>, usize) {
+    pub fn get_realizations(&self) -> &Vec<Vec<usize>> {
+        &self.realization
+    }
+    
+    pub fn optimal_solution(&mut self, goal: GoalType, l: usize) {
         let mut regulators: Vec<(usize, usize)> = match goal {
             GoalType::MAX => self
                 .realization
@@ -195,12 +203,41 @@ impl Instance<'_> {
                 .enumerate()
                 .map(|(i, a)| (i, a.into_iter().sum()))
                 .collect(),
-            GoalType::COV => return (vec![], 0),
+            GoalType::COV => panic!("Not implemented yet!"),
         };
         regulators.sort_by(|(_, a), (_, b)| b.cmp(a));
         regulators.truncate(l);
 
         let (subset, values): (Vec<usize>, Vec<usize>) = regulators.into_iter().unzip();
-        (subset, values.into_iter().sum())
+        self.results
+            .push((goal, Algorithm::OPT, subset, values.into_iter().sum()));
+    }
+
+    pub fn namp(&mut self, goal: GoalType, k: usize, l: usize) {
+        let mut result: Vec<(usize, usize)> = namp_for_probemax(self.model.get_reduction(&goal), k)
+            .into_iter()
+            .map(|a| -> (usize, usize) {
+                (
+                    a,
+                    match &goal {
+                        GoalType::MAX => self.realization[a].clone().into_iter().max().unwrap_or(0),
+                        GoalType::SUM => self.realization[a].clone().into_iter().sum(),
+                        GoalType::COV => panic!("Not implemented yet!"),
+                    },
+                )
+            })
+            .collect();
+
+        result.sort_by(|(_, a), (_, b)| b.cmp(a));
+
+        let (subset, mut values): (Vec<usize>, Vec<usize>) = result.into_iter().unzip();
+        values.truncate(l);
+
+        self.results
+            .push((goal, Algorithm::NAMP, subset, values.into_iter().sum()));
+    }
+
+    pub fn get_results(&self) -> &Vec<(GoalType, Algorithm, Vec<usize>, usize)> {
+        &self.results
     }
 }

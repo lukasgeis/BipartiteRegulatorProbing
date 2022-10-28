@@ -1,5 +1,6 @@
 extern crate core;
 
+pub mod algorithms;
 pub mod distributions;
 pub mod mdp;
 pub mod model;
@@ -7,10 +8,30 @@ pub mod model;
 pub type Probability = f64;
 pub type Reward = f64;
 
+#[derive(Debug)]
+/// Type of Goal function
 pub enum GoalType {
+    /// Max-Edge-Variant
     MAX,
+    /// Sum-Edge-Variant
     SUM,
+    /// Coverage-Variant
     COV,
+}
+
+#[derive(Debug)]
+/// Algorithm
+pub enum Algorithm {
+    /// Markov-Decision-Process
+    MDP,
+    /// Adaptive-Myopic-Policy
+    AMP,
+    /// Non-Adaptive-Myopic-Policy
+    NAMP,
+    /// Stochastic-Continous-Greedy
+    SCG,
+    /// Optimal-Offline-Algorithm
+    OPT,
 }
 
 /// Checks if two numbers of f64 are close enough to let their difference be considered a numerical error

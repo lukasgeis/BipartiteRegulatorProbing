@@ -3,7 +3,7 @@ name = "bpr"
 version = "0.1.0"
 authors = ["Lukas Geis <lukasgeis@gmx.de>"]
 license = "MIT"
-edition = "2021"
+edition = "2018"
 
 [dependencies]
 structopt = { version = "0.3", default-features = false }

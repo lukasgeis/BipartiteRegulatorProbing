@@ -1,8 +1,15 @@
 #![deny(warnings)]
 
-use std::{fs::File, io::BufReader, path::PathBuf};
+use std::{
+    fs::{File, OpenOptions},
+    io::{prelude::Write, BufReader},
+    path::PathBuf,
+};
 
-use bpr::model::{BipartiteRegulatorProbing, Instance};
+use bpr::{
+    model::{BipartiteRegulatorProbing, Instance},
+    GoalType,
+};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -14,17 +21,15 @@ struct Opt {
     #[structopt(long, parse(from_os_str))]
     log: Option<PathBuf>,
 
-    #[structopt(long)]
-    mdp: bool,
+    #[structopt(short, default_value = "1")]
+    k: usize,
 
-    #[structopt(short, long, default_value = "1")]
+    #[structopt(short, default_value = "1")]
     l: usize,
 }
 
 fn main() -> std::io::Result<()> {
     let opt = Opt::from_args();
-
-    println!("{:?} -- {:?} -- {:?}", &opt.input, &opt.log, &opt.mdp);
 
     let bpr: BipartiteRegulatorProbing = match &opt.input {
         Some(path) => {
@@ -34,10 +39,22 @@ fn main() -> std::io::Result<()> {
         None => panic!("No input file was given!"),
     };
 
-    let instance: Instance = bpr.create_instance();
-    println!("{:?}", instance.optimal_solution(bpr::GoalType::MAX, opt.l));
-    println!("{:?}", instance.optimal_solution(bpr::GoalType::SUM, opt.l));
-    println!("{:?}", &instance);
+    let mut instance: Instance = bpr.create_instance();
+    instance.optimal_solution(GoalType::MAX, opt.l);
+    instance.namp(GoalType::MAX, opt.k, opt.l);
+    println!("{:?}", instance.get_realizations());
+    println!("{:?}", instance.get_results());
+    
+
+    let mut outfile = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .create(true)
+        .open(opt.log.unwrap())
+        .unwrap();
+    if let Err(e) = writeln!(outfile, "A new line!") {
+        eprintln!("Couldn't write to file: {}", e);
+    }
 
     Ok(())
 }
