@@ -2,6 +2,7 @@ use std::{
     fs::OpenOptions,
     io::{prelude::Write, BufRead, Error, ErrorKind},
     path::PathBuf,
+    time::Instant,
 };
 
 use rand::{distributions::Alphanumeric, Rng};
@@ -355,6 +356,8 @@ impl<'a> Instance<'a> {
             panic!("Not implemented yet!");
         }
 
+        let opt_time = Instant::now();
+
         let mut regulators: Vec<(usize, usize)> = match goal {
             GoalType::COV => panic!("There is no way you can reach this part of the code!"),
             GoalType::MAX => self
@@ -383,7 +386,7 @@ impl<'a> Instance<'a> {
         let (subset, values): (Vec<usize>, Vec<usize>) = regulators.into_iter().unzip();
         self.results.push((
             (goal, Algorithm::OPT, l, l),
-            0.0,
+            opt_time.elapsed().as_secs_f64(),
             subset,
             Some(values.into_iter().sum()),
         ));
@@ -412,6 +415,7 @@ impl<'a> Instance<'a> {
                 self.run_algorithm(goal.clone(), Algorithm::SCG, k, l);
             }
             Algorithm::AMP => {
+                let amp_time = Instant::now();
                 match goal {
                     GoalType::COV => panic!("Not implemented yet!"),
                     GoalType::MAX => {
@@ -463,7 +467,7 @@ impl<'a> Instance<'a> {
                         values.truncate(l);
                         self.results.push((
                             (GoalType::MAX, Algorithm::AMP, k, l),
-                            0.0,
+                            amp_time.elapsed().as_secs_f64(),
                             subset,
                             Some(values.into_iter().sum()),
                         ));
@@ -517,7 +521,7 @@ impl<'a> Instance<'a> {
                         values.truncate(l);
                         self.results.push((
                             (GoalType::SUM, Algorithm::AMP, k, l),
-                            0.0,
+                            amp_time.elapsed().as_secs_f64(),
                             subset,
                             Some(values.into_iter().sum()),
                         ));
@@ -525,6 +529,7 @@ impl<'a> Instance<'a> {
                 };
             }
             Algorithm::NAMP => {
+                let namp_time = Instant::now();
                 match goal {
                     GoalType::COV => panic!("Not implemented yet!"),
                     GoalType::MAX => {
@@ -570,7 +575,7 @@ impl<'a> Instance<'a> {
                             }
                             self.results.push((
                                 (GoalType::MAX, Algorithm::NAMP, k, l),
-                                0.0,
+                                namp_time.elapsed().as_secs_f64(),
                                 namp_order,
                                 Some(value),
                             ))
@@ -619,7 +624,7 @@ impl<'a> Instance<'a> {
                             }
                             self.results.push((
                                 (GoalType::SUM, Algorithm::NAMP, k, l),
-                                0.0,
+                                namp_time.elapsed().as_secs_f64(),
                                 namp_order,
                                 Some(value),
                             ))

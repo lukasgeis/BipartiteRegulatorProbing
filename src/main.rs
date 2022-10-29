@@ -1,12 +1,23 @@
 #![deny(warnings)]
 
-use std::{fs::File, io::BufReader, path::PathBuf};
+use std::{
+    fs::{File, OpenOptions},
+    io::{prelude::Write, BufReader},
+    path::PathBuf,
+    time::Instant,
+};
 
-use bpr::model::{BipartiteRegulatorProbing, Instance};
+use bpr::{
+    model::{BipartiteRegulatorProbing, Instance},
+    model_to_string,
+};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "max-edge", about = "Max-Edge Variant of BPR")]
+#[structopt(
+    name = "BipartiteRegulatorProbing",
+    about = "Implementation of Algorithms for BPR"
+)]
 struct Opt {
     #[structopt(long, parse(from_os_str))]
     input: Option<PathBuf>,
@@ -19,10 +30,15 @@ struct Opt {
 
     #[structopt(short, default_value = "1")]
     l: usize,
+
+    #[structopt(long, parse(from_os_str))]
+    input_time: Option<PathBuf>,
 }
 
 fn main() -> std::io::Result<()> {
     let opt = Opt::from_args();
+
+    let input_time = Instant::now();
 
     // Create Model
     let mut bpr: BipartiteRegulatorProbing = match &opt.input {
@@ -32,6 +48,24 @@ fn main() -> std::io::Result<()> {
         }
         None => panic!("No input file was given!"),
     };
+
+    let input_duration = input_time.elapsed();
+    if opt.input_time.is_some() {
+        let mut time_outfile = OpenOptions::new()
+            .write(true)
+            .append(true)
+            .create(true)
+            .open(opt.input_time.unwrap())
+            .unwrap();
+        if let Err(e) = writeln!(
+            time_outfile,
+            "{} -- Time: {:?}",
+            model_to_string(&bpr),
+            input_duration.as_secs_f64()
+        ) {
+            eprintln!("Couldn't write to file: {}", e);
+        }
+    }
 
     // Create Instance
     let mut instance: Instance = bpr.create_instance();
