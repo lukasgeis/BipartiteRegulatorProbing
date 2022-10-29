@@ -25,7 +25,7 @@ fn main() -> std::io::Result<()> {
     let opt = Opt::from_args();
 
     // Create Model
-    let bpr: BipartiteRegulatorProbing = match &opt.input {
+    let mut bpr: BipartiteRegulatorProbing = match &opt.input {
         Some(path) => {
             let file = File::open(path)?;
             BipartiteRegulatorProbing::init(BufReader::new(file), true)?
@@ -38,7 +38,9 @@ fn main() -> std::io::Result<()> {
 
     // Run Algorithms
     instance.run_algorithm(bpr::GoalType::MAX, bpr::Algorithm::OPT, opt.k, opt.l);
+    instance.run_algorithm(bpr::GoalType::MAX, bpr::Algorithm::NAMP, opt.k, opt.l);
     instance.run_algorithm(bpr::GoalType::SUM, bpr::Algorithm::OPT, opt.k, opt.l);
+    instance.run_algorithm(bpr::GoalType::SUM, bpr::Algorithm::NAMP, opt.k, opt.l);
 
     // Log Results to file
     instance.log_results(opt.log, None);

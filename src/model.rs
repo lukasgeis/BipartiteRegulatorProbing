@@ -7,6 +7,7 @@ use std::{
 use rand::{distributions::Alphanumeric, Rng};
 
 use crate::{
+    algorithms::namp_probemax,
     distributions::{max_distribution, sum_distribution, Distribution},
     model_to_string, solution_to_string, Algorithm, GoalType, Probability, Setting, Solution,
 };
@@ -204,7 +205,7 @@ impl BipartiteRegulatorProbing {
     }
 
     /// Create an Instance of this Model
-    pub fn create_instance(&self) -> Instance {
+    pub fn create_instance(&mut self) -> Instance {
         Instance::from_model(self, self.probemax.is_some())
     }
 }
@@ -213,7 +214,7 @@ impl BipartiteRegulatorProbing {
 #[derive(Debug)]
 pub struct Instance<'a> {
     /// Reference to Model
-    bpr: &'a BipartiteRegulatorProbing,
+    bpr: &'a mut BipartiteRegulatorProbing,
     /// Edge-Realizations
     realizations: Vec<Vec<usize>>,
     /// For faster access: ProbeMax-Realizations
@@ -226,7 +227,7 @@ pub struct Instance<'a> {
 
 impl<'a> Instance<'a> {
     /// Create an Instance from a Model
-    pub fn from_model(model: &'a BipartiteRegulatorProbing, probemax: bool) -> Self {
+    pub fn from_model(model: &'a mut BipartiteRegulatorProbing, probemax: bool) -> Self {
         let mut realization: Vec<Vec<usize>> = Vec::with_capacity(model.get_na());
         for a in 0..model.get_na() {
             let mut regulator_realization: Vec<usize> = Vec::with_capacity(model.get_nb());
@@ -404,7 +405,91 @@ impl<'a> Instance<'a> {
                 self.run_algorithm(goal.clone(), Algorithm::SCG, k, l);
             }
             Algorithm::AMP => panic!("Not implemented yet!"),
-            Algorithm::NAMP => panic!("Not implemented yet!"),
+            Algorithm::NAMP => {
+                match goal {
+                    GoalType::COV => panic!("Not implemented yet!"),
+                    GoalType::MAX => {
+                        if let Some(sol) =
+                            self.bpr
+                                .get_algorithm((GoalType::MAX, Algorithm::NAMP, 0, 0))
+                        {
+                            let mut subset: Vec<usize> = sol.2.clone();
+                            subset.truncate(k);
+                            let mut value: usize = 0;
+                            for i in 0..l {
+                                value += self.probemax_realizations.as_ref().unwrap().0[subset[i]];
+                            }
+                            self.results.push((
+                                (GoalType::MAX, Algorithm::NAMP, k, l),
+                                0.0,
+                                subset,
+                                Some(value),
+                            ))
+                        } else {
+                            let mut namp_order: Vec<usize> =
+                                namp_probemax(self.bpr.get_probemax(GoalType::MAX).unwrap());
+                            self.bpr.add_non_adaptive_solution((
+                                (GoalType::MAX, Algorithm::NAMP, 0, 0),
+                                0.0,
+                                namp_order.clone(),
+                                None,
+                            ));
+                            namp_order.truncate(k);
+                            let mut value: usize = 0;
+                            for i in 0..l {
+                                value +=
+                                    self.probemax_realizations.as_ref().unwrap().0[namp_order[i]];
+                            }
+                            self.results.push((
+                                (GoalType::MAX, Algorithm::NAMP, k, l),
+                                0.0,
+                                namp_order,
+                                Some(value),
+                            ))
+                        }
+                    }
+                    GoalType::SUM => {
+                        if let Some(sol) =
+                            self.bpr
+                                .get_algorithm((GoalType::SUM, Algorithm::NAMP, 0, 0))
+                        {
+                            let mut subset: Vec<usize> = sol.2.clone();
+                            subset.truncate(k);
+                            let mut value: usize = 0;
+                            for i in 0..l {
+                                value += self.probemax_realizations.as_ref().unwrap().1[subset[i]];
+                            }
+                            self.results.push((
+                                (GoalType::SUM, Algorithm::NAMP, k, l),
+                                0.0,
+                                subset,
+                                Some(value),
+                            ))
+                        } else {
+                            let mut namp_order: Vec<usize> =
+                                namp_probemax(self.bpr.get_probemax(GoalType::SUM).unwrap());
+                            self.bpr.add_non_adaptive_solution((
+                                (GoalType::SUM, Algorithm::NAMP, 0, 0),
+                                0.0,
+                                namp_order.clone(),
+                                None,
+                            ));
+                            namp_order.truncate(k);
+                            let mut value: usize = 0;
+                            for i in 0..l {
+                                value +=
+                                    self.probemax_realizations.as_ref().unwrap().1[namp_order[i]];
+                            }
+                            self.results.push((
+                                (GoalType::SUM, Algorithm::NAMP, k, l),
+                                0.0,
+                                namp_order,
+                                Some(value),
+                            ))
+                        }
+                    }
+                };
+            }
             Algorithm::SCG => panic!("Not implemented yet!"),
             Algorithm::MDP => panic!("Not implemented yet!"),
         };
