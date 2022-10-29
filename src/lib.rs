@@ -1,3 +1,7 @@
+use std::fmt::format;
+
+use model::BipartiteRegulatorProbing;
+
 extern crate core;
 
 pub mod algorithms;
@@ -7,8 +11,12 @@ pub mod model;
 
 pub type Probability = f64;
 pub type Reward = f64;
+pub type Time = f64;
 
-#[derive(Debug)]
+pub type Setting = (GoalType, Algorithm, usize, usize);
+pub type Solution = (Setting, Time, Vec<usize>, Option<usize>);
+
+#[derive(Debug, PartialEq, Clone)]
 /// Type of Goal function
 pub enum GoalType {
     /// Max-Edge-Variant
@@ -19,7 +27,7 @@ pub enum GoalType {
     COV,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 /// Algorithm
 pub enum Algorithm {
     /// Markov-Decision-Process
@@ -32,6 +40,10 @@ pub enum Algorithm {
     SCG,
     /// Optimal-Offline-Algorithm
     OPT,
+    /// All Algorithms above
+    ALL,
+    /// All Algorithms above expect MDP
+    POLY,
 }
 
 /// Checks if two numbers of f64 are close enough to let their difference be considered a numerical error
@@ -82,4 +94,27 @@ pub fn boolean_array_to_usize(arr: &Vec<bool>) -> usize {
     }
 
     val
+}
+
+pub fn model_to_string(bpr: &BipartiteRegulatorProbing) -> String {
+    format!(
+        "Name: {} -- na: {} -- nb: {} -- vs: {}",
+        bpr.get_name(),
+        bpr.get_na(),
+        bpr.get_nb(),
+        bpr.get_vs()
+    )
+}
+
+pub fn solution_to_string(solution: &Solution) -> String {
+    format!(
+        "Goal: {:?} -- Algorithm: {:?} -- k: {} -- l: {} -- Time: {} -- Subset: {:?} -- Value: {}",
+        solution.0 .0,
+        solution.0 .1,
+        solution.0 .2,
+        solution.0 .3,
+        solution.1,
+        solution.2,
+        solution.3.unwrap_or(0)
+    )
 }
