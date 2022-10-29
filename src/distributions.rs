@@ -94,16 +94,12 @@ impl Distribution {
 
     /// Get expected value of values less or equal to k
     pub fn expected_less(&self, k: usize) -> f64 {
-        if k < 0 {
-            0.0 as f64
-        } else {
-            self.expected_values[k]
-        }
+        self.expected_values[k]
     }
 
     /// Get expected value of values greater or equal to k
     pub fn expected_greater(&self, k: usize) -> f64 {
-        if k <= 0 {
+        if k == 0 {
             self.expected_values[self.v - 1]
         } else {
             self.expected_values[self.v - 1] - self.expected_values[k - 1]
@@ -189,7 +185,6 @@ pub fn sum_distribution(distributions: &Vec<Distribution>) -> Distribution {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::*;
 
     #[test]
     fn not_a_distribution() {

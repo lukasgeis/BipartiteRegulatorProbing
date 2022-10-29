@@ -146,30 +146,37 @@ impl BipartiteRegulatorProbing {
         })
     }
 
+    /// Get Number of Regulators
     pub fn get_na(&self) -> usize {
         self.na
     }
 
+    /// Get Number of Positions
     pub fn get_nb(&self) -> usize {
         self.nb
     }
 
+    /// Get Size of Support
     pub fn get_vs(&self) -> usize {
         self.vs
     }
 
+    /// Get Name of Graph (almost most certainly "Random")
     pub fn get_name(&self) -> &String {
         &self.name
     }
 
+    /// Get Distributions of a Regulator
     pub fn get_regulator(&self, a: usize) -> &Vec<Distribution> {
         &self.edges[a]
     }
 
+    /// Get Distribution from an edge (a,b)
     pub fn get_edge(&self, a: usize, b: usize) -> &Distribution {
         &self.edges[a][b]
     }
 
+    /// Get ProbeMax-Distribution as Option
     pub fn get_probemax(&self, goal: GoalType) -> Option<&Vec<Distribution>> {
         if self.probemax.is_none() {
             return None;
@@ -181,6 +188,7 @@ impl BipartiteRegulatorProbing {
         };
     }
 
+    /// Get Non-Adaptive Algorithm if found
     pub fn get_algorithm(&self, setting: Setting) -> Option<&Solution> {
         for algo in &self.non_adaptive_algorithms {
             if algo.0 == setting {
@@ -190,24 +198,34 @@ impl BipartiteRegulatorProbing {
         None
     }
 
+    /// Add Non-Adaptive Algorithm
     pub fn add_non_adaptive_solution(&mut self, solution: Solution) {
         self.non_adaptive_algorithms.push(solution);
     }
 
+    /// Create an Instance of this Model
     pub fn create_instance(&self) -> Instance {
         Instance::from_model(self, self.probemax.is_some())
     }
 }
+
+/// Instance of an Model with drawn values
 #[derive(Debug)]
 pub struct Instance<'a> {
+    /// Reference to Model
     bpr: &'a BipartiteRegulatorProbing,
+    /// Edge-Realizations
     realizations: Vec<Vec<usize>>,
+    /// For faster access: ProbeMax-Realizations
     probemax_realizations: Option<(Vec<usize>, Vec<usize>)>,
+    ///  Computed Results
     results: Vec<Solution>,
+    /// Hash-Code of Instance (random -> generated to allow better comparison of algorithms after logging)
     coding: String,
 }
 
 impl<'a> Instance<'a> {
+    /// Create an Instance from a Model
     pub fn from_model(model: &'a BipartiteRegulatorProbing, probemax: bool) -> Self {
         let mut realization: Vec<Vec<usize>> = Vec::with_capacity(model.get_na());
         for a in 0..model.get_na() {
@@ -254,14 +272,17 @@ impl<'a> Instance<'a> {
         }
     }
 
+    /// Get the BPR-Model
     pub fn get_model(&self) -> &BipartiteRegulatorProbing {
         &self.bpr
     }
 
+    /// Get a specific Realization
     pub fn get_realization(&self, a: usize, b: usize) -> usize {
         self.realizations[a][b]
     }
 
+    /// Get a realization of ProbeMax
     pub fn get_probemax_realization(&self, goal: GoalType, a: usize) -> usize {
         if self.probemax_realizations.is_none() {
             return 0;
@@ -273,6 +294,7 @@ impl<'a> Instance<'a> {
         };
     }
 
+    /// Get a Result if existing
     pub fn get_result(&self, setting: Setting) -> Option<&Solution> {
         for algo in &self.results {
             if algo.0 == setting {
@@ -282,10 +304,12 @@ impl<'a> Instance<'a> {
         None
     }
 
+    /// Get Hashcode of Instance
     pub fn get_coding(&self) -> &String {
         &self.coding
     }
 
+    /// Log the currently computed results (or a specific result) to a logfile
     pub fn log_results(&self, logfile: Option<PathBuf>, index: Option<usize>) {
         let mut outfile = OpenOptions::new()
             .write(true)
@@ -325,6 +349,7 @@ impl<'a> Instance<'a> {
         };
     }
 
+    /// Compute the optimal solution for this instance
     pub fn optimal_solution(&mut self, goal: GoalType, l: usize) {
         if goal == GoalType::COV {
             panic!("Not implemented yet!");
@@ -364,6 +389,7 @@ impl<'a> Instance<'a> {
         ));
     }
 
+    /// Run an algorithm on this instance
     pub fn run_algorithm(&mut self, goal: GoalType, algo: Algorithm, k: usize, l: usize) {
         match algo {
             Algorithm::OPT => self.optimal_solution(goal, l),

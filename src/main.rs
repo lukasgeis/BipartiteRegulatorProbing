@@ -24,6 +24,7 @@ struct Opt {
 fn main() -> std::io::Result<()> {
     let opt = Opt::from_args();
 
+    // Create Model
     let bpr: BipartiteRegulatorProbing = match &opt.input {
         Some(path) => {
             let file = File::open(path)?;
@@ -32,9 +33,14 @@ fn main() -> std::io::Result<()> {
         None => panic!("No input file was given!"),
     };
 
+    // Create Instance
     let mut instance: Instance = bpr.create_instance();
+
+    // Run Algorithms
     instance.run_algorithm(bpr::GoalType::MAX, bpr::Algorithm::OPT, opt.k, opt.l);
     instance.run_algorithm(bpr::GoalType::SUM, bpr::Algorithm::OPT, opt.k, opt.l);
+
+    // Log Results to file
     instance.log_results(opt.log, None);
 
     Ok(())

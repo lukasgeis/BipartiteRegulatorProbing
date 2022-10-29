@@ -1,5 +1,3 @@
-use std::fmt::format;
-
 use model::BipartiteRegulatorProbing;
 
 extern crate core;
@@ -96,6 +94,7 @@ pub fn boolean_array_to_usize(arr: &Vec<bool>) -> usize {
     val
 }
 
+/// Convert a BPR-model into a suitable output format
 pub fn model_to_string(bpr: &BipartiteRegulatorProbing) -> String {
     format!(
         "Name: {} -- na: {} -- nb: {} -- vs: {}",
@@ -106,6 +105,7 @@ pub fn model_to_string(bpr: &BipartiteRegulatorProbing) -> String {
     )
 }
 
+/// COnvert a Solution into a suitable output format
 pub fn solution_to_string(solution: &Solution) -> String {
     format!(
         "Goal: {:?} -- Algorithm: {:?} -- k: {} -- l: {} -- Time: {} -- Subset: {:?} -- Value: {}",
