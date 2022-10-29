@@ -2,7 +2,6 @@ use model::BipartiteRegulatorProbing;
 
 extern crate core;
 
-pub mod algorithms;
 pub mod distributions;
 pub mod mdp;
 pub mod model;
@@ -25,7 +24,7 @@ pub enum GoalType {
     COV,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 /// Algorithm
 pub enum Algorithm {
     /// Markov-Decision-Process
