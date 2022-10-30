@@ -521,10 +521,103 @@ impl<'a> Instance<'a> {
                         namp_time.elapsed().as_secs_f64(),
                         namp_order,
                         Some(value),
-                    ))
+                    ));
                 }
             }
-            Algorithm::SCG => panic!("Not implemented yet!"),
+            Algorithm::SCG => {
+                let scg_time = Instant::now();
+                if goal == GoalType::COV {
+                    panic!("Not implemented yet!");
+                }
+
+                if let Some(sol) = self.bpr.get_algorithm((goal.clone(), Algorithm::SCG, k, l)) {
+                    let mut subset: Vec<usize> = sol.2.clone();
+                    subset.truncate(k);
+                    let mut value: usize = 0;
+                    for i in 0..l {
+                        if goal == GoalType::MAX {
+                            value += self.probemax_realizations.as_ref().unwrap().0[subset[i]];
+                        } else {
+                            value += self.probemax_realizations.as_ref().unwrap().1[subset[i]];
+                        }
+                    }
+                    self.results
+                        .push(((goal, Algorithm::NAMP, k, l), 0.0, subset, Some(value)))
+                } else {
+                    let delta: usize = 3 * k * self.bpr.get_na();
+                    let mut y: Vec<Probability> = vec![0.0; self.bpr.get_na()];
+
+                    for _ in 0..delta {
+                        let mut w: Vec<usize> = vec![0; self.bpr.get_na()];
+                        let samples: usize = 4
+                            * delta
+                            * delta
+                            * (1 + (self.bpr.get_na() as f64).ln() as usize
+                                + (0.5 * (delta as f64).ln()) as usize);
+                        for _ in 0..samples {
+                            let mut sample: Vec<usize> = Vec::with_capacity(self.bpr.get_na());
+                            for i in 0..self.bpr.get_na() {
+                                if rand::thread_rng().gen::<Probability>() <= y[i] {
+                                    sample.push(
+                                        self.bpr.get_probemax(goal.clone()).unwrap()[i]
+                                            .draw_value(),
+                                    );
+                                } else {
+                                    sample.push(0);
+                                }
+                            }
+                            for i in 0..self.bpr.get_na() {
+                                let i_value: usize =
+                                    self.bpr.get_probemax(goal.clone()).unwrap()[i].draw_value();
+                                if i_value > sample[i] {
+                                    let mut sample_i: Vec<usize> = sample.clone();
+                                    let mut sample_c: Vec<usize> = sample.clone();
+                                    sample_i[i] = i_value;
+                                    sample_c.sort();
+                                    sample_i.sort();
+                                    sample_c.truncate(l);
+                                    sample_i.truncate(l);
+                                    w[i] += sample_i.into_iter().sum::<usize>()
+                                        - sample_c.clone().into_iter().sum::<usize>();
+                                }
+                            }
+                        }
+
+                        let mut best_weights: Vec<(usize, usize)> =
+                            w.into_iter().enumerate().collect();
+                        best_weights.sort_by(|(_, a), (_, b)| b.cmp(a));
+                        best_weights.truncate(k);
+                        for (i, _) in best_weights {
+                            y[i] += 1.0 / (delta as f64);
+                        }
+                    }
+                    let mut result: Vec<(usize, f64)> = y.into_iter().enumerate().collect();
+                    result.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
+                    result.truncate(k);
+
+                    let (subset, _): (Vec<usize>, Vec<f64>) = result.into_iter().unzip();
+                    self.bpr.add_non_adaptive_solution((
+                        (goal.clone(), Algorithm::SCG, k, l),
+                        scg_time.elapsed().as_secs_f64(),
+                        subset.clone(),
+                        None,
+                    ));
+                    let mut value: usize = 0;
+                    for i in 0..l {
+                        if goal == GoalType::MAX {
+                            value += self.probemax_realizations.as_ref().unwrap().0[subset[i]];
+                        } else {
+                            value += self.probemax_realizations.as_ref().unwrap().1[subset[i]];
+                        }
+                    }
+                    self.results.push((
+                        (goal, Algorithm::SCG, k, l),
+                        scg_time.elapsed().as_secs_f64(),
+                        subset,
+                        Some(value),
+                    ));
+                }
+            }
             Algorithm::MDP => panic!("Not implemented yet!"),
         };
     }

@@ -74,9 +74,11 @@ fn main() -> std::io::Result<()> {
     instance.run_algorithm(bpr::GoalType::MAX, bpr::Algorithm::OPT, opt.k, opt.l);
     instance.run_algorithm(bpr::GoalType::MAX, bpr::Algorithm::AMP, opt.k, opt.l);
     instance.run_algorithm(bpr::GoalType::MAX, bpr::Algorithm::NAMP, opt.k, opt.l);
+    instance.run_algorithm(bpr::GoalType::MAX, bpr::Algorithm::SCG, opt.k, opt.l);
     instance.run_algorithm(bpr::GoalType::SUM, bpr::Algorithm::OPT, opt.k, opt.l);
     instance.run_algorithm(bpr::GoalType::SUM, bpr::Algorithm::AMP, opt.k, opt.l);
     instance.run_algorithm(bpr::GoalType::SUM, bpr::Algorithm::NAMP, opt.k, opt.l);
+    instance.run_algorithm(bpr::GoalType::SUM, bpr::Algorithm::SCG, opt.k, opt.l);
 
     // Log Results to file
     instance.log_results(opt.log, None);
