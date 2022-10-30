@@ -350,48 +350,6 @@ impl<'a> Instance<'a> {
         };
     }
 
-    /// Compute the optimal solution for this instance
-    pub fn optimal_solution(&mut self, goal: GoalType, l: usize) {
-        if goal == GoalType::COV {
-            panic!("Not implemented yet!");
-        }
-
-        let opt_time = Instant::now();
-
-        let mut regulators: Vec<(usize, usize)> = match goal {
-            GoalType::COV => panic!("There is no way you can reach this part of the code!"),
-            GoalType::MAX => self
-                .probemax_realizations
-                .as_ref()
-                .unwrap()
-                .0
-                .clone()
-                .into_iter()
-                .enumerate()
-                .collect(),
-            GoalType::SUM => self
-                .probemax_realizations
-                .as_ref()
-                .unwrap()
-                .1
-                .clone()
-                .into_iter()
-                .enumerate()
-                .collect(),
-        };
-
-        regulators.sort_by(|(_, a), (_, b)| b.cmp(a));
-        regulators.truncate(l);
-
-        let (subset, values): (Vec<usize>, Vec<usize>) = regulators.into_iter().unzip();
-        self.results.push((
-            (goal, Algorithm::OPT, l, l),
-            opt_time.elapsed().as_secs_f64(),
-            subset,
-            Some(values.into_iter().sum()),
-        ));
-    }
-
     /// Run an algorithm on this instance
     pub fn run_algorithm(&mut self, goal: GoalType, algo: Algorithm, k: usize, l: usize) {
         if self
@@ -403,234 +361,168 @@ impl<'a> Instance<'a> {
         }
 
         match algo {
-            Algorithm::OPT => self.optimal_solution(goal, l),
+            Algorithm::OPT => {
+                if goal == GoalType::COV {
+                    panic!("Not implemented yet!");
+                }
+
+                let opt_time = Instant::now();
+
+                let mut regulators: Vec<(usize, usize)> = match goal {
+                    GoalType::COV => panic!("There is no way you can reach this part of the code!"),
+                    GoalType::MAX => self
+                        .probemax_realizations
+                        .as_ref()
+                        .unwrap()
+                        .0
+                        .clone()
+                        .into_iter()
+                        .enumerate()
+                        .collect(),
+                    GoalType::SUM => self
+                        .probemax_realizations
+                        .as_ref()
+                        .unwrap()
+                        .1
+                        .clone()
+                        .into_iter()
+                        .enumerate()
+                        .collect(),
+                };
+
+                regulators.sort_by(|(_, a), (_, b)| b.cmp(a));
+                regulators.truncate(l);
+
+                let (subset, values): (Vec<usize>, Vec<usize>) = regulators.into_iter().unzip();
+                self.results.push((
+                    (goal, Algorithm::OPT, l, l),
+                    opt_time.elapsed().as_secs_f64(),
+                    subset,
+                    Some(values.into_iter().sum()),
+                ));
+            }
             Algorithm::ALL => {
                 self.run_algorithm(goal.clone(), Algorithm::MDP, k, l);
                 self.run_algorithm(goal.clone(), Algorithm::POLY, k, l);
             }
             Algorithm::POLY => {
-                self.optimal_solution(goal.clone(), l);
+                self.run_algorithm(goal.clone(), Algorithm::OPT, k, l);
                 self.run_algorithm(goal.clone(), Algorithm::AMP, k, l);
                 self.run_algorithm(goal.clone(), Algorithm::NAMP, k, l);
                 self.run_algorithm(goal.clone(), Algorithm::SCG, k, l);
             }
             Algorithm::AMP => {
                 let amp_time = Instant::now();
-                match goal {
-                    GoalType::COV => panic!("Not implemented yet!"),
-                    GoalType::MAX => {
-                        let mut ordering: Vec<(usize, f64)> = self
-                            .bpr
-                            .get_probemax(GoalType::MAX)
-                            .unwrap()
-                            .into_iter()
-                            .enumerate()
-                            .map(|(i, d)| (i, d.expected_value()))
-                            .collect();
-                        ordering.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
-                        ordering.truncate(l);
+                if goal == GoalType::COV {
+                    panic!("Not implemented yet!");
+                }
 
-                        let mut probed_subset: Vec<(usize, usize)> = ordering
-                            .into_iter()
-                            .map(|(a, _)| (a, self.get_probemax_realization(GoalType::MAX, a)))
-                            .collect();
+                let mut ordering: Vec<(usize, f64)> = self
+                    .bpr
+                    .get_probemax(goal.clone())
+                    .unwrap()
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, d)| (i, d.expected_value()))
+                    .collect();
+                ordering.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
+                ordering.truncate(l);
 
-                        for _ in 0..(k - l) {
-                            let (subset, mut values): (Vec<usize>, Vec<usize>) =
-                                probed_subset.clone().into_iter().unzip();
-                            values.sort_by(|a, b| b.cmp(a));
+                let mut probed_subset: Vec<(usize, usize)> = ordering
+                    .into_iter()
+                    .map(|(a, _)| (a, self.get_probemax_realization(goal.clone(), a)))
+                    .collect();
 
-                            let argmax: usize = (0..self.bpr.get_na())
-                                .into_iter()
-                                .filter(|i| !subset.contains(i))
-                                .map(|i| -> (usize, f64) {
-                                    let distributions: &Vec<Distribution> =
-                                        self.bpr.get_probemax(GoalType::MAX).unwrap();
-                                    (
-                                        i,
-                                        distributions[i].greater(values[l - 1] + 1)
-                                            * distributions[i].expected_greater(values[l - 1] + 1),
-                                    )
-                                })
-                                .max_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap())
-                                .unwrap()
-                                .0;
+                for _ in 0..(k - l) {
+                    let (subset, mut values): (Vec<usize>, Vec<usize>) =
+                        probed_subset.clone().into_iter().unzip();
+                    values.sort_by(|a, b| b.cmp(a));
 
-                            probed_subset.push((
-                                argmax,
-                                self.get_probemax_realization(GoalType::MAX, argmax),
-                            ));
-                        }
+                    let argmax: usize = (0..self.bpr.get_na())
+                        .into_iter()
+                        .filter(|i| !subset.contains(i))
+                        .map(|i| -> (usize, f64) {
+                            let distributions: &Vec<Distribution> =
+                                self.bpr.get_probemax(goal.clone()).unwrap();
+                            (
+                                i,
+                                distributions[i].greater(values[l - 1] + 1)
+                                    * distributions[i].expected_greater(values[l - 1] + 1),
+                            )
+                        })
+                        .max_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap())
+                        .unwrap()
+                        .0;
 
-                        let (subset, mut values): (Vec<usize>, Vec<usize>) =
-                            probed_subset.into_iter().unzip();
-                        values.truncate(l);
-                        self.results.push((
-                            (GoalType::MAX, Algorithm::AMP, k, l),
-                            amp_time.elapsed().as_secs_f64(),
-                            subset,
-                            Some(values.into_iter().sum()),
-                        ));
-                    }
-                    GoalType::SUM => {
-                        let mut ordering: Vec<(usize, f64)> = self
-                            .bpr
-                            .get_probemax(GoalType::SUM)
-                            .unwrap()
-                            .into_iter()
-                            .enumerate()
-                            .map(|(i, d)| (i, d.expected_value()))
-                            .collect();
-                        ordering.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
-                        ordering.truncate(l);
+                    probed_subset
+                        .push((argmax, self.get_probemax_realization(goal.clone(), argmax)));
+                }
 
-                        let mut probed_subset: Vec<(usize, usize)> = ordering
-                            .into_iter()
-                            .map(|(a, _)| (a, self.get_probemax_realization(GoalType::SUM, a)))
-                            .collect();
-
-                        for _ in 0..(k - l) {
-                            let (subset, mut values): (Vec<usize>, Vec<usize>) =
-                                probed_subset.clone().into_iter().unzip();
-                            values.sort_by(|a, b| b.cmp(a));
-
-                            let argmax: usize = (0..self.bpr.get_na())
-                                .into_iter()
-                                .filter(|i| !subset.contains(i))
-                                .map(|i| -> (usize, f64) {
-                                    let distributions: &Vec<Distribution> =
-                                        self.bpr.get_probemax(GoalType::SUM).unwrap();
-                                    (
-                                        i,
-                                        distributions[i].greater(values[l - 1] + 1)
-                                            * distributions[i].expected_greater(values[l - 1] + 1),
-                                    )
-                                })
-                                .max_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap())
-                                .unwrap()
-                                .0;
-
-                            probed_subset.push((
-                                argmax,
-                                self.get_probemax_realization(GoalType::SUM, argmax),
-                            ));
-                        }
-
-                        let (subset, mut values): (Vec<usize>, Vec<usize>) =
-                            probed_subset.into_iter().unzip();
-                        values.truncate(l);
-                        self.results.push((
-                            (GoalType::SUM, Algorithm::AMP, k, l),
-                            amp_time.elapsed().as_secs_f64(),
-                            subset,
-                            Some(values.into_iter().sum()),
-                        ));
-                    }
-                };
+                let (subset, mut values): (Vec<usize>, Vec<usize>) =
+                    probed_subset.into_iter().unzip();
+                values.truncate(l);
+                self.results.push((
+                    (goal, Algorithm::AMP, k, l),
+                    amp_time.elapsed().as_secs_f64(),
+                    subset,
+                    Some(values.into_iter().sum()),
+                ));
             }
             Algorithm::NAMP => {
                 let namp_time = Instant::now();
-                match goal {
-                    GoalType::COV => panic!("Not implemented yet!"),
-                    GoalType::MAX => {
-                        if let Some(sol) =
-                            self.bpr
-                                .get_algorithm((GoalType::MAX, Algorithm::NAMP, 0, 0))
-                        {
-                            let mut subset: Vec<usize> = sol.2.clone();
-                            subset.truncate(k);
-                            let mut value: usize = 0;
-                            for i in 0..l {
-                                value += self.probemax_realizations.as_ref().unwrap().0[subset[i]];
-                            }
-                            self.results.push((
-                                (GoalType::MAX, Algorithm::NAMP, k, l),
-                                0.0,
-                                subset,
-                                Some(value),
-                            ))
+                if goal == GoalType::COV {
+                    panic!("Not implemented yet!");
+                }
+
+                if let Some(sol) = self
+                    .bpr
+                    .get_algorithm((goal.clone(), Algorithm::NAMP, 0, 0))
+                {
+                    let mut subset: Vec<usize> = sol.2.clone();
+                    subset.truncate(k);
+                    let mut value: usize = 0;
+                    for i in 0..l {
+                        if goal == GoalType::MAX {
+                            value += self.probemax_realizations.as_ref().unwrap().0[subset[i]];
                         } else {
-                            let mut ordering: Vec<(usize, f64)> = self
-                                .bpr
-                                .get_probemax(GoalType::SUM)
-                                .unwrap()
-                                .into_iter()
-                                .enumerate()
-                                .map(|(i, d)| (i, d.expected_value()))
-                                .collect();
-                            ordering.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
-                            let mut namp_order: Vec<usize> =
-                                ordering.into_iter().map(|(i, _)| i).collect();
-                            self.bpr.add_non_adaptive_solution((
-                                (GoalType::MAX, Algorithm::NAMP, 0, 0),
-                                0.0,
-                                namp_order.clone(),
-                                None,
-                            ));
-                            namp_order.truncate(k);
-                            let mut value: usize = 0;
-                            for i in 0..l {
-                                value +=
-                                    self.probemax_realizations.as_ref().unwrap().0[namp_order[i]];
-                            }
-                            self.results.push((
-                                (GoalType::MAX, Algorithm::NAMP, k, l),
-                                namp_time.elapsed().as_secs_f64(),
-                                namp_order,
-                                Some(value),
-                            ))
+                            value += self.probemax_realizations.as_ref().unwrap().1[subset[i]];
                         }
                     }
-                    GoalType::SUM => {
-                        if let Some(sol) =
-                            self.bpr
-                                .get_algorithm((GoalType::SUM, Algorithm::NAMP, 0, 0))
-                        {
-                            let mut subset: Vec<usize> = sol.2.clone();
-                            subset.truncate(k);
-                            let mut value: usize = 0;
-                            for i in 0..l {
-                                value += self.probemax_realizations.as_ref().unwrap().1[subset[i]];
-                            }
-                            self.results.push((
-                                (GoalType::SUM, Algorithm::NAMP, k, l),
-                                0.0,
-                                subset,
-                                Some(value),
-                            ))
+                    self.results
+                        .push(((goal, Algorithm::NAMP, k, l), 0.0, subset, Some(value)))
+                } else {
+                    let mut ordering: Vec<(usize, f64)> = self
+                        .bpr
+                        .get_probemax(goal.clone())
+                        .unwrap()
+                        .into_iter()
+                        .enumerate()
+                        .map(|(i, d)| (i, d.expected_value()))
+                        .collect();
+                    ordering.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
+                    let mut namp_order: Vec<usize> = ordering.into_iter().map(|(i, _)| i).collect();
+                    self.bpr.add_non_adaptive_solution((
+                        (goal.clone(), Algorithm::NAMP, 0, 0),
+                        0.0,
+                        namp_order.clone(),
+                        None,
+                    ));
+                    namp_order.truncate(k);
+                    let mut value: usize = 0;
+                    for i in 0..l {
+                        if goal == GoalType::MAX {
+                            value += self.probemax_realizations.as_ref().unwrap().0[namp_order[i]];
                         } else {
-                            let mut ordering: Vec<(usize, f64)> = self
-                                .bpr
-                                .get_probemax(GoalType::MAX)
-                                .unwrap()
-                                .into_iter()
-                                .enumerate()
-                                .map(|(i, d)| (i, d.expected_value()))
-                                .collect();
-                            ordering.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
-                            let mut namp_order: Vec<usize> =
-                                ordering.into_iter().map(|(i, _)| i).collect();
-                            self.bpr.add_non_adaptive_solution((
-                                (GoalType::SUM, Algorithm::NAMP, 0, 0),
-                                0.0,
-                                namp_order.clone(),
-                                None,
-                            ));
-                            namp_order.truncate(k);
-                            let mut value: usize = 0;
-                            for i in 0..l {
-                                value +=
-                                    self.probemax_realizations.as_ref().unwrap().1[namp_order[i]];
-                            }
-                            self.results.push((
-                                (GoalType::SUM, Algorithm::NAMP, k, l),
-                                namp_time.elapsed().as_secs_f64(),
-                                namp_order,
-                                Some(value),
-                            ))
+                            value += self.probemax_realizations.as_ref().unwrap().1[namp_order[i]];
                         }
                     }
-                };
+                    self.results.push((
+                        (goal, Algorithm::NAMP, k, l),
+                        namp_time.elapsed().as_secs_f64(),
+                        namp_order,
+                        Some(value),
+                    ))
+                }
             }
             Algorithm::SCG => panic!("Not implemented yet!"),
             Algorithm::MDP => panic!("Not implemented yet!"),
