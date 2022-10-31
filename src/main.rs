@@ -131,6 +131,7 @@ fn main() -> std::io::Result<()> {
                 panic!("Coverage is not implemented yet!");
             }
             if !opt.exclude_opt {
+                println!("HERE");
                 instance.run_algorithm(GoalType::MAX, Algorithm::OPT, 0, opt.l);
                 instance.run_algorithm(GoalType::SUM, Algorithm::OPT, 0, opt.l);
             }

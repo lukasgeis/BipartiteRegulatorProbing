@@ -352,10 +352,11 @@ impl<'a> Instance<'a> {
 
     /// Run an algorithm on this instance
     pub fn run_algorithm(&mut self, goal: GoalType, algo: Algorithm, k: usize, l: usize) {
-        if self
-            .get_result((goal.clone(), algo.clone(), k, l))
-            .is_some()
-            || l > k
+        if algo != Algorithm::OPT
+            && (self
+                .get_result((goal.clone(), algo.clone(), k, l))
+                .is_some()
+                || l > k)
         {
             return;
         }
