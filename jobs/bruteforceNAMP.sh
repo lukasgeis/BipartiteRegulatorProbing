@@ -12,7 +12,7 @@
 for file in /scratch/memhierarchy/geis/bpr/data/1/0/*
 do 
     BASENAME="$(basename -- $file)"
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/10/OUT_$BASENAME--input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/10/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
 done
 
 wait
