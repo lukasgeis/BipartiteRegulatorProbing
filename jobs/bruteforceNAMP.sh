@@ -10,22 +10,25 @@
 #SBATCH --mail-type=FAIL
 
 for file in /scratch/memhierarchy/geis/bpr/data/1/0/*
-do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/10/out_$file --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
+do 
+    BASENAME="$(basename -- $file)"
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/10/OUT_$BASENAME--input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
 done
 
 wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/1/1/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/11/out_$file  --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- & 
+    BASENAME="$(basename -- $file)"
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/11/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- & 
 done
 
 wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/1/2/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/12/out_$file  --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
+    BASENAME="$(basename -- $file)"
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/12/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
 done
 
 wait
@@ -33,21 +36,24 @@ wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/2/0/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/20/out_$file  --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
+    BASENAME="$(basename -- $file)"
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/20/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
 done
 
 wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/2/1/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/21/out_$file  --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
+    BASENAME="$(basename -- $file)"
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/21/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
 done
 
 wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/2/2/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/22/out_$file  --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
+    BASENAME="$(basename -- $file)"
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/22/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
 done
 
 wait
@@ -55,19 +61,22 @@ wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/3/0/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/30/out_$file  --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
+    BASENAME="$(basename -- $file)"
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/30/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
 done
 
 wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/3/1/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/31/out_$file  --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
+    BASENAME="$(basename -- $file)"
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/31/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
 done
 
 wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/3/2/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/32/out_$file  --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
+    BASENAME="$(basename -- $file)"
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/namp/32/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm NAMP -- &
 done
