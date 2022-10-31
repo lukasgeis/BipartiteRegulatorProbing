@@ -11,21 +11,21 @@
 
 for file in /scratch/memhierarchy/geis/bpr/data/1/0/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/comparison10 --iterations 10 --algorithm POLY --fraction 4 &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/10/out_$file --iterations 10 --algorithm POLY --fraction 4 &
 done
 
 wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/1/1/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/comparison11 --iterations 10 --algorithm POLY --fraction 4 &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/11/out_$file --iterations 10 --algorithm POLY --fraction 4 &
 done
 
 wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/1/2/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/comparison12 --iterations 10 --algorithm POLY --fraction 4 &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/12/out_$file --iterations 10 --algorithm POLY --fraction 4 &
 done
 
 wait
@@ -33,21 +33,21 @@ wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/2/0/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/comparison20 --iterations 10 --algorithm POLY --fraction 4 &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/20/out_$file --iterations 10 --algorithm POLY --fraction 4 &
 done
 
 wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/2/1/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/comparison21 --iterations 10 --algorithm POLY --fraction 4 &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/21/out_$file --iterations 10 --algorithm POLY --fraction 4 &
 done
 
 wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/2/2/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/comparison22 --iterations 10 --algorithm POLY --fraction 4 &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/22/out_$file --iterations 10 --algorithm POLY --fraction 4 &
 done
 
 wait
@@ -55,19 +55,19 @@ wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/3/0/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/comparison30 --iterations 10 --algorithm POLY --fraction 4 &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/30/out_$file --iterations 10 --algorithm POLY --fraction 4 &
 done
 
 wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/3/1/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/comparison31 --iterations 10 --algorithm POLY --fraction 4 &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/31/out_$file --iterations 10 --algorithm POLY --fraction 4 &
 done
 
 wait
 
 for file in /scratch/memhierarchy/geis/bpr/data/3/2/*
 do
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/comparison32 --iterations 10 --algorithm POLY --fraction 4 &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/32/out_$file --iterations 10 --algorithm POLY --fraction 4 &
 done
