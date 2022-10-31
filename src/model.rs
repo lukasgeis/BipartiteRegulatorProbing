@@ -497,7 +497,7 @@ impl<'a> Instance<'a> {
                         }
                     }
                     self.results
-                        .push(((goal, Algorithm::NAMP, k, l), 0.0, subset, Some(value)))
+                        .push(((goal, Algorithm::NAMP, k, l), sol.1, subset, Some(value)))
                 } else {
                     let mut ordering: Vec<(usize, f64)> = self
                         .bpr
@@ -509,9 +509,10 @@ impl<'a> Instance<'a> {
                         .collect();
                     ordering.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
                     let mut namp_order: Vec<usize> = ordering.into_iter().map(|(i, _)| i).collect();
+                    let elapsed_namp_time: f64 = namp_time.elapsed().as_secs_f64();
                     self.bpr.add_non_adaptive_solution((
                         (goal.clone(), Algorithm::NAMP, 0, 0),
-                        0.0,
+                        elapsed_namp_time,
                         namp_order.clone(),
                         None,
                     ));
@@ -526,7 +527,7 @@ impl<'a> Instance<'a> {
                     }
                     self.results.push((
                         (goal, Algorithm::NAMP, k, l),
-                        namp_time.elapsed().as_secs_f64(),
+                        elapsed_namp_time,
                         namp_order,
                         Some(value),
                     ));
@@ -550,7 +551,7 @@ impl<'a> Instance<'a> {
                         }
                     }
                     self.results
-                        .push(((goal, Algorithm::NAMP, k, l), 0.0, subset, Some(value)))
+                        .push(((goal, Algorithm::SCG, k, l), sol.1, subset, Some(value)))
                 } else {
                     let delta: usize = 3 * k * self.bpr.get_na();
                     let mut y: Vec<Probability> = vec![0.0; self.bpr.get_na()];
@@ -604,9 +605,10 @@ impl<'a> Instance<'a> {
                     result.truncate(k);
 
                     let (subset, _): (Vec<usize>, Vec<f64>) = result.into_iter().unzip();
+                    let elapsed_scg_time: f64 = scg_time.elapsed().as_secs_f64();
                     self.bpr.add_non_adaptive_solution((
                         (goal.clone(), Algorithm::SCG, k, l),
-                        scg_time.elapsed().as_secs_f64(),
+                        elapsed_scg_time,
                         subset.clone(),
                         None,
                     ));
@@ -620,7 +622,7 @@ impl<'a> Instance<'a> {
                     }
                     self.results.push((
                         (goal, Algorithm::SCG, k, l),
-                        scg_time.elapsed().as_secs_f64(),
+                        elapsed_scg_time,
                         subset,
                         Some(value),
                     ));
