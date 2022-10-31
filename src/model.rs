@@ -366,6 +366,13 @@ impl<'a> Instance<'a> {
                     panic!("Not implemented yet!");
                 }
 
+                if self
+                    .get_result((goal.clone(), Algorithm::OPT, 0, l))
+                    .is_some()
+                {
+                    return;
+                }
+
                 let opt_time = Instant::now();
 
                 let mut regulators: Vec<(usize, usize)> = match goal {
@@ -395,7 +402,7 @@ impl<'a> Instance<'a> {
 
                 let (subset, values): (Vec<usize>, Vec<usize>) = regulators.into_iter().unzip();
                 self.results.push((
-                    (goal, Algorithm::OPT, l, l),
+                    (goal, Algorithm::OPT, 0, l),
                     opt_time.elapsed().as_secs_f64(),
                     subset,
                     Some(values.into_iter().sum()),

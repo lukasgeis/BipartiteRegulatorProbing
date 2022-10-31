@@ -47,6 +47,9 @@ struct Opt {
     fraction: usize,
 
     #[structopt(long)]
+    exclude_opt: bool,
+
+    #[structopt(long)]
     coverage: bool,
 }
 
@@ -86,11 +89,21 @@ fn main() -> std::io::Result<()> {
     for _ in 0..opt.iterations {
         let mut instance: Instance = bpr.create_instance();
         if opt.bruteforce {
+            if !opt.exclude_opt {
+                for l in 1..(na + 1) {
+                    if opt.coverage {
+                        panic!("Coverage is not implemented yet!");
+                    }
+                    instance.run_algorithm(GoalType::MAX, Algorithm::OPT, 0, l);
+                    instance.run_algorithm(GoalType::SUM, Algorithm::OPT, 0, l);
+                }
+            }
             for k in 1..(na + 1) {
                 for l in 1..(k + 1) {
                     if opt.coverage {
                         panic!("Coverage is not implemented yet!");
                     }
+
                     instance.run_algorithm(GoalType::MAX, opt.algorithm.clone(), k, l);
                     instance.run_algorithm(GoalType::SUM, opt.algorithm.clone(), k, l);
                 }
@@ -104,6 +117,10 @@ fn main() -> std::io::Result<()> {
                         if opt.coverage {
                             panic!("Coverage is not implemented yet!");
                         }
+                        if !opt.exclude_opt {
+                            instance.run_algorithm(GoalType::MAX, Algorithm::OPT, 0, l);
+                            instance.run_algorithm(GoalType::SUM, Algorithm::OPT, 0, l);
+                        }
                         instance.run_algorithm(GoalType::MAX, opt.algorithm.clone(), k, l);
                         instance.run_algorithm(GoalType::SUM, opt.algorithm.clone(), k, l);
                     }
@@ -112,6 +129,10 @@ fn main() -> std::io::Result<()> {
         } else if opt.k >= 1 && opt.l >= 1 && opt.k >= opt.l {
             if opt.coverage {
                 panic!("Coverage is not implemented yet!");
+            }
+            if !opt.exclude_opt {
+                instance.run_algorithm(GoalType::MAX, Algorithm::OPT, 0, opt.l);
+                instance.run_algorithm(GoalType::SUM, Algorithm::OPT, 0, opt.l);
             }
             instance.run_algorithm(GoalType::MAX, opt.algorithm.clone(), opt.k, opt.l);
             instance.run_algorithm(GoalType::SUM, opt.algorithm.clone(), opt.k, opt.l);
