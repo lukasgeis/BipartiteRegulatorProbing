@@ -311,12 +311,12 @@ impl<'a> Instance<'a> {
     }
 
     /// Log the currently computed results (or a specific result) to a logfile
-    pub fn log_results(&self, logfile: Option<PathBuf>, index: Option<usize>) {
+    pub fn log_results(&self, logfile: &Option<PathBuf>, index: Option<usize>) {
         let mut outfile = OpenOptions::new()
             .write(true)
             .append(true)
             .create(true)
-            .open(logfile.unwrap())
+            .open(logfile.as_ref().unwrap())
             .unwrap();
 
         match index {

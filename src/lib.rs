@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use model::BipartiteRegulatorProbing;
 
 extern crate core;
@@ -41,6 +43,23 @@ pub enum Algorithm {
     ALL,
     /// All Algorithms above expect MDP
     POLY,
+}
+
+/// Allow parsing Algorithm from Structopt
+impl FromStr for Algorithm {
+    type Err = &'static str;
+    fn from_str(algo: &str) -> Result<Self, Self::Err> {
+        match algo {
+            "MDP" => Ok(Algorithm::MDP),
+            "AMP" => Ok(Algorithm::AMP),
+            "SCG" => Ok(Algorithm::SCG),
+            "OPT" => Ok(Algorithm::OPT),
+            "ALL" => Ok(Algorithm::ALL),
+            "NAMP" => Ok(Algorithm::NAMP),
+            "POLY" => Ok(Algorithm::POLY),
+            _ => Err("Could not parse Algorithm!"),
+        }
+    }
 }
 
 /// Checks if two numbers of f64 are close enough to let their difference be considered a numerical error
