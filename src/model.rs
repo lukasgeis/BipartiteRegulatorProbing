@@ -419,6 +419,11 @@ impl<'a> Instance<'a> {
                 self.run_algorithm(goal.clone(), Algorithm::NAMP, k, l);
                 self.run_algorithm(goal.clone(), Algorithm::SCG, k, l);
             }
+            Algorithm::FAST => {
+                self.run_algorithm(goal.clone(), Algorithm::OPT, k, l);
+                self.run_algorithm(goal.clone(), Algorithm::AMP, k, l);
+                self.run_algorithm(goal.clone(), Algorithm::NAMP, k, l);
+            }
             Algorithm::AMP => {
                 let amp_time = Instant::now();
                 if goal == GoalType::COV {

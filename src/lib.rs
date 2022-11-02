@@ -43,6 +43,8 @@ pub enum Algorithm {
     ALL,
     /// All Algorithms above expect MDP
     POLY,
+    /// Only NAMP, AMP, and OPT Algorithm
+    FAST,
 }
 
 /// Allow parsing Algorithm from Structopt
@@ -57,6 +59,7 @@ impl FromStr for Algorithm {
             "ALL" => Ok(Algorithm::ALL),
             "NAMP" => Ok(Algorithm::NAMP),
             "POLY" => Ok(Algorithm::POLY),
+            "FAST" => Ok(Algorithm::FAST),
             _ => Err("Could not parse Algorithm!"),
         }
     }
