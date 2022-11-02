@@ -12,7 +12,7 @@
 for file in /scratch/memhierarchy/geis/bpr/data/1/0/*
 do 
     BASENAME="$(basename -- $file)"
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/10/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm FAST --bruteforce &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/10/OUT_$BASENAME --iterations 10 --algorithm FAST --bruteforce &
 done
 
 wait
@@ -20,7 +20,7 @@ wait
 for file in /scratch/memhierarchy/geis/bpr/data/1/1/*
 do
     BASENAME="$(basename -- $file)"
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/11/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm FAST --bruteforce & 
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/11/OUT_$BASENAME --iterations 10 --algorithm FAST --bruteforce & 
 done
 
 wait
@@ -28,7 +28,7 @@ wait
 for file in /scratch/memhierarchy/geis/bpr/data/1/2/*
 do
     BASENAME="$(basename -- $file)"
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/12/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm FAST --bruteforce &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/12/OUT_$BASENAME --iterations 10 --algorithm FAST --bruteforce &
 done
 
 wait
@@ -37,7 +37,7 @@ wait
 for file in /scratch/memhierarchy/geis/bpr/data/2/0/*
 do
     BASENAME="$(basename -- $file)"
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/20/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm FAST --bruteforce &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/20/OUT_$BASENAME --iterations 10 --algorithm FAST --bruteforce &
 done
 
 wait
@@ -45,7 +45,7 @@ wait
 for file in /scratch/memhierarchy/geis/bpr/data/2/1/*
 do
     BASENAME="$(basename -- $file)"
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/21/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm FAST --bruteforce &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/21/OUT_$BASENAME --iterations 10 --algorithm FAST --bruteforce &
 done
 
 wait
@@ -53,7 +53,7 @@ wait
 for file in /scratch/memhierarchy/geis/bpr/data/2/2/*
 do
     BASENAME="$(basename -- $file)"
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/22/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm FAST --bruteforce &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/22/OUT_$BASENAME --iterations 10 --algorithm FAST --bruteforce &
 done
 
 wait
@@ -62,7 +62,7 @@ wait
 for file in /scratch/memhierarchy/geis/bpr/data/3/0/*
 do
     BASENAME="$(basename -- $file)"
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/30/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm FAST --bruteforce &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/30/OUT_$BASENAME --iterations 10 --algorithm FAST --bruteforce &
 done
 
 wait
@@ -70,7 +70,7 @@ wait
 for file in /scratch/memhierarchy/geis/bpr/data/3/1/*
 do
     BASENAME="$(basename -- $file)"
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/31/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm FAST --bruteforce &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/31/OUT_$BASENAME --iterations 10 --algorithm FAST --bruteforce &
 done
 
 wait
@@ -78,5 +78,5 @@ wait
 for file in /scratch/memhierarchy/geis/bpr/data/3/2/*
 do
     BASENAME="$(basename -- $file)"
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/32/OUT_$BASENAME --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 10 --algorithm FAST --bruteforce &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/FAST/32/OUT_$BASENAME --iterations 10 --algorithm FAST --bruteforce &
 done
