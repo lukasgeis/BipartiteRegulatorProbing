@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=bprPOLY
+#SBATCH --job-name=bprall
 #SBATCH --partition=general1
 #SBATCH --nodes=1
 #SBATCH --ntasks=9
@@ -12,11 +12,11 @@
 for file in /scratch/memhierarchy/geis/bpr/data/1/0/Random_na1*
 do
     BASENAME="$(basename -- $file)"
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/10/OUT_$BASENAME --iterations 10 --algorithm ALL --fraction 2 &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/all/OUT_$BASENAME --iterations 10 --algorithm ALL --fraction 4 &
 done
 
 for file in /scratch/memhierarchy/geis/bpr/data/1/0/Random_na2*
 do
     BASENAME="$(basename -- $file)"
-    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/poly/10/OUT_$BASENAME --iterations 10 --algorithm ALL --fraction 2 &
+    target/release/bpr --input $file --log /scratch/memhierarchy/geis/bpr/logs/all/OUT_$BASENAME --iterations 10 --algorithm ALL --fraction 4 &
 done
