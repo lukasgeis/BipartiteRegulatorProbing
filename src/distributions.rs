@@ -6,13 +6,13 @@ use rand::*;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Distribution {
     /// Size of Support
-    v: usize,
+    pub(crate) v: usize,
     /// Exact Probabilities
-    exact_probabilities: Vec<Probability>,
+    pub(crate) exact_probabilities: Vec<Probability>,
     /// Cumulative Ascending Probabilities
-    cumulative_probabilities: Vec<Probability>,
+    pub(crate) cumulative_probabilities: Vec<Probability>,
     /// Cumulative Ascending Expected Values
-    expected_values: Vec<f64>,
+    pub(crate) expected_values: Vec<f64>,
 }
 
 impl Distribution {

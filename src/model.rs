@@ -9,26 +9,31 @@ use rand::{distributions::Alphanumeric, Rng};
 
 use crate::{
     distributions::{max_distribution, sum_distribution, Distribution},
-    model_to_string, solution_to_string, Algorithm, GoalType, Probability, Setting, Solution,
+    mdp::{index_of_state, ProbemaxAction, ProbemaxMDP, ProbemaxState, MDP},
+    model_to_string, solution_to_string, Algorithm, GoalType, Probability, Reward, Setting,
+    Solution, Time,
 };
 
 /// Base model for BipartiteRegulatorProbing
 #[derive(Debug)]
 pub struct BipartiteRegulatorProbing {
     /// Number of Regulators
-    na: usize,
+    pub(crate) na: usize,
     /// Number of Positions
-    nb: usize,
+    pub(crate) nb: usize,
     /// Size of Support
-    vs: usize,
+    pub(crate) vs: usize,
     /// Name of Graph (almost most certainly Random)
-    name: String,
+    pub(crate) name: String,
     /// Distributions for every Edge
-    edges: Vec<Vec<Distribution>>,
+    pub(crate) edges: Vec<Vec<Distribution>>,
     /// Reductions to Top-l-ProbeMax
-    probemax: Option<(Vec<Distribution>, Vec<Distribution>)>,
+    pub(crate) probemax: Option<(Vec<Distribution>, Vec<Distribution>)>,
     /// Non-Adaptive Policies
-    non_adaptive_algorithms: Vec<Solution>,
+    pub(crate) non_adaptive_algorithms: Vec<Solution>,
+    /// Optimal Adaptive Algorithm
+    pub(crate) optimal_adaptive_probemax:
+        Vec<(Setting, Vec<Vec<Option<(ProbemaxAction, Reward)>>>, Time)>,
 }
 
 impl BipartiteRegulatorProbing {
@@ -144,6 +149,7 @@ impl BipartiteRegulatorProbing {
             },
             edges: data,
             non_adaptive_algorithms: Vec::new(),
+            optimal_adaptive_probemax: Vec::new(),
         })
     }
 
@@ -202,6 +208,29 @@ impl BipartiteRegulatorProbing {
     /// Add Non-Adaptive Algorithm
     pub fn add_non_adaptive_solution(&mut self, solution: Solution) {
         self.non_adaptive_algorithms.push(solution);
+    }
+
+    /// Get Optimal Adaptive Policy
+    pub fn get_optimal_adaptive_probemax_policy(
+        &self,
+        setting: Setting,
+    ) -> Option<(&Vec<Vec<Option<(ProbemaxAction, Reward)>>>, Time)> {
+        for entry in &self.optimal_adaptive_probemax {
+            if entry.0 == setting {
+                return Some((&entry.1, entry.2));
+            }
+        }
+        None
+    }
+
+    /// Add Optimal Adaptive Policy
+    pub fn add_optimal_adaptive_probemax_policy(
+        &mut self,
+        setting: Setting,
+        policy: Vec<Vec<Option<(ProbemaxAction, Reward)>>>,
+        time: Time,
+    ) {
+        self.optimal_adaptive_probemax.push((setting, policy, time));
     }
 
     /// Create an Instance of this Model
@@ -633,7 +662,75 @@ impl<'a> Instance<'a> {
                     ));
                 }
             }
-            Algorithm::MDP => panic!("Not implemented yet!"),
+            Algorithm::MDP => {
+                if goal == GoalType::COV {
+                    panic!("Coverage not implemented yet!");
+                }
+
+                if self
+                    .bpr
+                    .get_optimal_adaptive_probemax_policy((goal.clone(), Algorithm::MDP, k, l))
+                    .is_none()
+                {
+                    let mdp_start = Instant::now();
+
+                    let mut probemax_mdp: ProbemaxMDP =
+                        ProbemaxMDP::init(self.bpr, goal.clone(), k, l);
+                    probemax_mdp.calculate_optimal_policy();
+
+                    self.bpr.add_optimal_adaptive_probemax_policy(
+                        (goal.clone(), Algorithm::MDP, k, l),
+                        probemax_mdp.get_table(),
+                        mdp_start.elapsed().as_secs_f64(),
+                    );
+                }
+
+                let (optimal_table, mdp_time): (&Vec<Vec<Option<(ProbemaxAction, Reward)>>>, Time) =
+                    self.bpr
+                        .get_optimal_adaptive_probemax_policy((goal.clone(), Algorithm::MDP, k, l))
+                        .unwrap();
+
+                let mut probed_subset: Vec<usize> = Vec::with_capacity(k);
+
+                let mut current_state: ProbemaxState =
+                    (vec![false; self.bpr.get_na()], vec![0; self.bpr.get_na()]);
+
+                let vs: usize = match goal {
+                    GoalType::COV => panic!("That does not make sense!"),
+                    GoalType::MAX => self.bpr.get_vs(),
+                    GoalType::SUM => self.bpr.get_vs() * self.bpr.get_na(),
+                };
+
+                for i in 0..k {
+                    let next_action: Option<(ProbemaxAction, Reward)> =
+                        optimal_table[k - i][index_of_state(&current_state, vs)];
+
+                    if next_action.is_none() {
+                        break;
+                    }
+                    let action: usize = next_action.unwrap().0;
+                    probed_subset.push(action);
+                    current_state.0[action - 1] = true;
+                    current_state.1[action - 1] =
+                        self.get_probemax_realization(goal.clone(), action - 1);
+                }
+
+                let mut sorted_subset: Vec<usize> = probed_subset.clone();
+                sorted_subset.sort_by(|a, b| b.cmp(a));
+                sorted_subset.truncate(l);
+
+                self.results.push((
+                    (goal.clone(), Algorithm::MDP, k, l),
+                    mdp_time,
+                    probed_subset,
+                    Some(
+                        sorted_subset
+                            .into_iter()
+                            .map(|a| self.get_probemax_realization(goal.clone(), a - 1))
+                            .sum(),
+                    ),
+                ));
+            }
         };
     }
 }

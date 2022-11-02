@@ -103,13 +103,23 @@ pub fn boolean_combination(n: usize) -> Vec<Vec<bool>> {
         .collect::<Vec<Vec<bool>>>()
 }
 
-/// Converts a vector of boolen (binary reprensentation) to its equivalent number
+/// Converts a vector of boolean (binary reprensentation) to its equivalent number
 pub fn boolean_array_to_usize(arr: &Vec<bool>) -> usize {
     let mut val: usize = 0;
     for k in 0..arr.len() {
         if arr[k] {
             val += 2_usize.pow(k as u32);
         }
+    }
+
+    val
+}
+
+/// Converts a vector of usize (representation in base vs) to its equivalent number
+pub fn usize_array_to_usize(arr: &Vec<usize>, vs: usize) -> usize {
+    let mut val: usize = 0;
+    for k in 0..arr.len() {
+        val += arr[k] * vs.pow(k as u32);
     }
 
     val

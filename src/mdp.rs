@@ -1,6 +1,7 @@
-use crate::*;
+use crate::{distributions::Distribution, *};
+use std::fmt::Debug;
 
-pub trait MDP<State, Action> {
+pub trait MDP<State: Debug, Action: Debug> {
     /// Get initial state of MDP
     fn get_initial_state(&self) -> State;
 
@@ -56,129 +57,228 @@ pub trait MDP<State, Action> {
     }
 }
 
+pub type ProbemaxState = (Vec<bool>, Vec<usize>);
+pub type ProbemaxAction = usize;
+
+pub struct ProbemaxMDP<'a> {
+    bpr: &'a BipartiteRegulatorProbing,
+    na: usize,
+    vs: usize,
+    k: usize,
+    l: usize,
+    states: Vec<ProbemaxState>,
+    goal: GoalType,
+    optimal_table: Vec<Vec<Option<(ProbemaxAction, Reward)>>>,
+}
+
+impl<'a> ProbemaxMDP<'a> {
+    pub fn init(model: &'a BipartiteRegulatorProbing, goal: GoalType, k: usize, l: usize) -> Self {
+        let na: usize = model.get_na();
+        let vs: usize = match goal {
+            GoalType::COV => panic!("That does not make sense!"),
+            GoalType::MAX => model.get_vs(),
+            GoalType::SUM => model.get_vs() * model.get_na(),
+        };
+
+        let mut all_states: Vec<ProbemaxState> = Vec::with_capacity((2 * (vs + 1)).pow(na as u32));
+        let all_values: Vec<Vec<usize>> = combinations(na, vs + 1);
+        for subset in boolean_combination(na) {
+            for values in &all_values {
+                all_states.push((subset.clone(), values.to_vec()));
+            }
+        }
+
+        let number_states: usize = all_states.len();
+
+        ProbemaxMDP {
+            bpr: model,
+            na: na,
+            vs: vs,
+            k: k,
+            l: l,
+            states: all_states,
+            goal: goal,
+            optimal_table: vec![vec![None; number_states]; na + 1],
+        }
+    }
+
+    pub fn get_table(&self) -> Vec<Vec<Option<(ProbemaxAction, Reward)>>> {
+        self.optimal_table.clone()
+    }
+}
+
+pub fn index_of_state(state: &ProbemaxState, vs: usize) -> usize {
+    let subset_index: usize = boolean_array_to_usize(&state.0);
+    let values_index: usize = usize_array_to_usize(&state.1, vs);
+
+    subset_index * (vs + 1).pow(state.0.len() as u32) + values_index
+}
+
+impl MDP<ProbemaxState, ProbemaxAction> for ProbemaxMDP<'_> {
+    fn get_initial_state(&self) -> ProbemaxState {
+        (vec![false; self.na], vec![0; self.na])
+    }
+
+    fn get_time_horizon(&self) -> usize {
+        self.k
+    }
+
+    fn get_states(&self) -> Vec<ProbemaxState> {
+        self.states.clone()
+    }
+
+    fn get_actions(&self) -> Vec<ProbemaxAction> {
+        (1..(self.na + 1)).into_iter().collect()
+    }
+
+    fn get_possible_actions(&self, state: &ProbemaxState) -> Vec<ProbemaxAction> {
+        self.get_actions()
+            .into_iter()
+            .filter(|a| !state.0[*a - 1])
+            .collect()
+    }
+
+    fn get_possible_transitions(
+        &self,
+        state: &ProbemaxState,
+        action: &ProbemaxAction,
+    ) -> Vec<(ProbemaxState, Probability)> {
+        if state.0[*action - 1] {
+            return vec![(state.clone(), 1.0)];
+        }
+
+        let mut possible_transitions: Vec<(ProbemaxState, Probability)> = Vec::new();
+
+        for next_state in &self.states {
+            let mut is_possible: bool = true;
+            for i in 0..self.na {
+                if i != *action - 1
+                    && (next_state.0[i] != state.0[i] || next_state.1[i] != state.1[i])
+                {
+                    is_possible = false;
+                    break;
+                }
+            }
+            if !is_possible || !next_state.0[*action - 1] {
+                continue;
+            }
+
+            let prob: Probability = self.bpr.get_probemax(self.goal.clone()).unwrap()[*action - 1]
+                .equal(next_state.1[*action - 1]);
+
+            if prob > 0.0 {
+                possible_transitions.push((next_state.clone(), prob));
+            }
+        }
+
+        possible_transitions
+    }
+
+    fn get_reward(&self, state: &ProbemaxState, action: &ProbemaxAction) -> Reward {
+        let mut ordered_values: Vec<usize> = state.1.clone();
+        ordered_values.sort_by(|a, b| b.cmp(a));
+        let min_value: usize = ordered_values[self.l - 1];
+        if min_value == self.vs {
+            return 0.0;
+        }
+
+        let distribution: &Distribution =
+            &self.bpr.get_probemax(self.goal.clone()).unwrap()[*action - 1];
+        let mut r: Reward = distribution.expected_greater(min_value + 1);
+        if min_value > 0 {
+            r *= distribution.greater(min_value + 1);
+        }
+
+        r
+    }
+
+    fn get_best_action(
+        &mut self,
+        state: &ProbemaxState,
+        t: usize,
+    ) -> Option<(ProbemaxAction, Reward)> {
+        let index: usize = index_of_state(state, self.vs);
+        if t > self.na {
+            return None;
+        } else if self.optimal_table[t][index].is_some() {
+            return self.optimal_table[t][index];
+        }
+        let action: Option<(ProbemaxAction, Reward)> = self.calculate_optimal_action(state, t);
+        self.optimal_table[t][index] = action;
+
+        action
+    }
+}
+
 /// Unit-Test with Example-Implementation for PrizeCollection
+#[cfg(test)]
 mod tests {
     use super::*;
 
-    type PrizeCollectionState = Option<Vec<bool>>;
-    type PrizeCollectionAction = usize;
-
-    struct PrizeCollectionMDP {
-        n: usize,
-        p: Vec<Probability>,
-        r: Vec<Reward>,
-        table: Vec<Vec<Option<(PrizeCollectionAction, Reward)>>>,
-    }
-
-    impl PrizeCollectionMDP {
-        fn init(n: usize, probabilities: Vec<Probability>, rewards: Vec<Reward>) -> Self {
-            PrizeCollectionMDP {
-                n: n,
-                p: probabilities,
-                r: rewards,
-                table: vec![vec![None; 2_usize.pow(n as u32) + 1]; n + 1],
-            }
-        }
-    }
-
-    impl MDP<PrizeCollectionState, PrizeCollectionAction> for PrizeCollectionMDP {
-        fn get_initial_state(&self) -> PrizeCollectionState {
-            Some(vec![false; self.n])
-        }
-
-        fn get_time_horizon(&self) -> usize {
-            self.n
-        }
-
-        fn get_states(&self) -> Vec<PrizeCollectionState> {
-            let mut states: Vec<PrizeCollectionState> = boolean_combination(self.n)
-                .into_iter()
-                .map(|x| Some(x))
-                .collect();
-            states.push(None);
-
-            states
-        }
-
-        fn get_actions(&self) -> Vec<PrizeCollectionAction> {
-            (1..(self.n + 1)).collect()
-        }
-
-        fn get_possible_actions(&self, state: &PrizeCollectionState) -> Vec<PrizeCollectionAction> {
-            if state.is_none() {
-                return vec![];
-            }
-
-            self.get_actions()
-                .into_iter()
-                .filter(|a| !state.as_ref().unwrap()[*a - 1])
-                .collect()
-        }
-
-        fn get_possible_transitions(
-            &self,
-            state: &PrizeCollectionState,
-            action: &PrizeCollectionAction,
-        ) -> Vec<(PrizeCollectionState, Probability)> {
-            if state.is_none() {
-                return vec![(None, 1.0)];
-            } else if state.as_ref().unwrap()[*action - 1] {
-                return vec![(state.clone(), 1.0)];
-            }
-
-            let mut transitions: Vec<(PrizeCollectionState, Probability)> = Vec::with_capacity(2);
-
-            // EMPTY state transition
-            transitions.push((None, 1.0 - self.p[*action - 1]));
-
-            // Value state transition
-            let mut new_subset: Vec<bool> = state.as_ref().unwrap().clone();
-            new_subset[*action - 1] = true;
-            transitions.push((Some(new_subset), self.p[*action - 1]));
-
-            transitions
-        }
-
-        fn get_reward(
-            &self,
-            state: &PrizeCollectionState,
-            action: &PrizeCollectionAction,
-        ) -> Reward {
-            if state.is_none() {
-                return 0.0;
-            } else if state.as_ref().unwrap()[*action - 1] {
-                return f64::NEG_INFINITY;
-            }
-
-            self.p[*action - 1] * self.r[*action - 1]
-        }
-
-        fn get_best_action(
-            &mut self,
-            state: &PrizeCollectionState,
-            t: usize,
-        ) -> Option<(PrizeCollectionAction, Reward)> {
-            if t > self.n || state.is_none() {
-                return None;
-            } else if self.table[t][boolean_array_to_usize(state.as_ref().unwrap())].is_some() {
-                return self.table[t][boolean_array_to_usize(state.as_ref().unwrap())];
-            }
-            let action: Option<(PrizeCollectionAction, Reward)> =
-                self.calculate_optimal_action(state, t);
-            self.table[t][boolean_array_to_usize(state.as_ref().unwrap())] = action;
-
-            action
-        }
-    }
-
     #[test]
-    fn example_prizecollection_mdp() {
-        let mut instance: PrizeCollectionMDP =
-            PrizeCollectionMDP::init(2, vec![0.01, 1.0], vec![1000.0, 1.0]);
-        instance.calculate_optimal_policy();
+    fn example_probemax_mdp() {
+        let mut bpr: BipartiteRegulatorProbing = BipartiteRegulatorProbing {
+            na: 3,
+            nb: 1,
+            vs: 5,
+            name: "TEST".to_string(),
+            edges: vec![],
+            probemax: Some((
+                vec![
+                    Distribution {
+                        v: 6,
+                        exact_probabilities: vec![0.8, 0.0, 0.0, 0.0, 0.0, 0.2],
+                        cumulative_probabilities: vec![0.8, 0.8, 0.8, 0.8, 0.8, 1.0],
+                        expected_values: vec![0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+                    },
+                    Distribution {
+                        v: 6,
+                        exact_probabilities: vec![0.5, 0.0, 0.0, 0.0, 0.5, 0.0],
+                        cumulative_probabilities: vec![0.5, 0.5, 0.5, 0.5, 1.0, 1.0],
+                        expected_values: vec![0.0, 0.0, 0.0, 0.0, 2.0, 2.0],
+                    },
+                    Distribution {
+                        v: 6,
+                        exact_probabilities: vec![0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+                        cumulative_probabilities: vec![0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+                        expected_values: vec![0.0, 0.0, 2.0, 2.0, 2.0, 2.0],
+                    },
+                ],
+                vec![],
+            )),
+            non_adaptive_algorithms: vec![],
+            optimal_adaptive_probemax: vec![],
+        };
 
-        assert_eq!(instance.table[1][1].unwrap(), (2, 1.0));
-        assert_eq!(instance.table[1][2].unwrap(), (1, 10.0));
-        assert_eq!(instance.table[2][0].unwrap(), (2, 11.0));
+        let mut probemax_mdp: ProbemaxMDP = ProbemaxMDP::init(&mut bpr, GoalType::MAX, 2, 1);
+        probemax_mdp.calculate_optimal_policy();
+
+        let entries_to_check: Vec<(usize, ProbemaxState, Option<(usize, Reward)>)> = vec![
+            (
+                2,
+                (vec![false, false, false], vec![0, 0, 0]),
+                Some((2, 3.1)),
+            ),
+            (1, (vec![true, false, false], vec![0, 0, 0]), Some((2, 2.0))),
+            (1, (vec![true, false, false], vec![5, 0, 0]), Some((2, 0.0))),
+            (1, (vec![false, true, false], vec![0, 0, 0]), Some((3, 2.0))),
+            (1, (vec![false, true, false], vec![0, 4, 0]), Some((1, 0.2))),
+            (1, (vec![false, false, true], vec![0, 0, 0]), None),
+            (1, (vec![false, false, true], vec![0, 0, 2]), Some((2, 1.0))),
+        ];
+        for entry in &entries_to_check {
+            let proposed_solution: Option<(usize, Reward)> =
+                probemax_mdp.optimal_table[entry.0][index_of_state(&entry.1, 5)];
+            assert!(
+                (entry.2.is_none() && proposed_solution.is_none())
+                    || (entry.2.is_some() && proposed_solution.is_some())
+            );
+            if proposed_solution.is_some() {
+                assert!(
+                    entry.2.unwrap().0 == proposed_solution.unwrap().0
+                        && is_close(entry.2.unwrap().1, proposed_solution.unwrap().1, None)
+                );
+            }
+        }
     }
 }
