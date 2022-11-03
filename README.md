@@ -71,3 +71,6 @@ Additionally, you can use OPT to get the optimal value of this instance. Further
 At the moment, there are $3$ possible goal functions. $f_{max}, f_{sum}$ which both reduce to [Top-$\ell$-ProbeMax](https://arxiv.org/pdf/2007.13121.pdf) and $f_{cov}$ which reduces to [MaximumCoverage](https://en.wikipedia.org/wiki/Maximum_coverage_problem) but is not implemented yet.
 
 For $f_{max}$ and $f_{sum}$, each $\mathit{Regulator }\,\, a \in A$ is assigned an independent value, namely the maximum or the sum of all its incident edges. After that, we have to choose $\ell \,\,\mathit{Regulators}$ to maximize the sum of their values. 
+
+### Jobs
+The jobs folder contains all bash files to run the algorithms for comparison on the Goehte-HHLR cluster.
