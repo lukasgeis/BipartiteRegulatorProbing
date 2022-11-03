@@ -2,7 +2,7 @@
 #SBATCH --job-name=bprallit
 #SBATCH --partition=general1
 #SBATCH --nodes=1
-#SBATCH --ntasks=30
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=100000
 #SBATCH --time=120:00:00
