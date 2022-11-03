@@ -58,12 +58,12 @@ to run on every possible fraction-combination of $k$ and $\ell$. Namely, if `fra
 <a name="algorithms" ></a>
 ### Algorithms
 
-Name | Adaptive? | Runtime | Value | Source
---- | --- | --- | --- | ---
-AMP | Yes | $\mathcal{O}(n_A \cdot (k + \log n))$ | $\frac{e - 1}{e}OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
-NAMP | No | $\mathcal{O}(n_A\log n_A)$ | $\frac{e - 1}{2e}OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
-SCG | No | $\mathcal{O}(k^3n_A^5\log n_A\log n_A)$ | $(\frac{e - 1}{e} - \frac{1}{n_A})OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
-MDP | Yes | $\Omega((2 \cdot \|\mathcal{V}\|)^{n_A})$ | $OPT_A$ | [MDP](https://en.wikipedia.org/wiki/Markov_decision_process)
+Input | Name | Adaptive? | Runtime | Value | Source
+--- | --- | --- | --- | --- | ---
+AMP | AdaptiveMyopicPolicy | Yes | $\mathcal{O}(n_A \cdot (k + \log n))$ | $\frac{e - 1}{e}OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
+NAMP | NonAdaptiveMyopicPolicy | No | $\mathcal{O}(n_A\log n_A)$ | $\frac{e - 1}{2e}OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
+SCG | StochasticContinousGreedy | No | $\mathcal{O}(k^3n_A^5\log n_A\log n_A)$ | $(\frac{e - 1}{e} - \frac{1}{n_A})OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
+MDP | MarkovDevisionProcess | Yes | $\Omega((2 \cdot \|\mathcal{V}\|)^{n_A})$ | $OPT_A$ | [MDP](https://en.wikipedia.org/wiki/Markov_decision_process)
 
 Additionally, you can use OPT to get the optimal value of this instance. Furthermore to run `AMP` and `NAMP`, you can use `FAST`, to run `AMP`, `NAMP`, and `SCG`, you can use `POLY` and to run all algorithms, you can use `ALL`. 
 
