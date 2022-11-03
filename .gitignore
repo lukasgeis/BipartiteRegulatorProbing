@@ -4,3 +4,7 @@
 # Testing
 testdata
 log/testlog
+
+# Local Testing
+data
+log
