@@ -5,10 +5,11 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=100000
-#SBATCH --time=60:00:00
+#SBATCH --time=250:00:00
 #SBATCH --no-requeue
 #SBATCH --mail-type=FAIL
 
+"""
 for file in /scratch/memhierarchy/geis/bpr/data/0/0/*
 do 
     BASENAME="$(basename -- $file)"
@@ -99,8 +100,24 @@ done
 
 wait
 echo "Finished 3-0"
+"""
 
-for file in /scratch/memhierarchy/geis/bpr/data/3/1/*
+target/release/bpr --input /scratch/memhierarchy/geis/data/3/1/Random_na6623_nb9498_vs2_0 --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 0 --algorithm OPT
+target/release/bpr --input /scratch/memhierarchy/geis/data/3/1/Random_na6719_nb4464_vs6_0 --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 0 --algorithm OPT
+
+for file in /scratch/memhierarchy/geis/bpr/data/3/1/Random_na7*
+do
+    BASENAME="$(basename -- $file)"
+    target/release/bpr --input $file --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 0 --algorithm OPT 
+done
+
+for file in /scratch/memhierarchy/geis/bpr/data/3/1/Random_na8*
+do
+    BASENAME="$(basename -- $file)"
+    target/release/bpr --input $file --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 0 --algorithm OPT 
+done
+
+for file in /scratch/memhierarchy/geis/bpr/data/3/1/Random_na9*
 do
     BASENAME="$(basename -- $file)"
     target/release/bpr --input $file --input-time /scratch/memhierarchy/geis/bpr/logs/inputtimes --iterations 0 --algorithm OPT 
