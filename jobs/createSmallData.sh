@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=bprdatasmall
+#SBATCH --job-name=bprDataSmall
 #SBATCH --partition=general1
 #SBATCH --nodes=1
 #SBATCH --ntasks=3
