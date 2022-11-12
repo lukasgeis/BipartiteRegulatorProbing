@@ -1,33 +1,39 @@
+extern crate core;
+
 use std::str::FromStr;
 
 use model::BipartiteRegulatorProbing;
 
-extern crate core;
-
+pub mod algorithms;
 pub mod distributions;
-pub mod mdp;
 pub mod model;
 
+/// Custom Types
 pub type Probability = f64;
 pub type Reward = f64;
 pub type Time = f64;
 
-pub type Setting = (GoalType, Algorithm, usize, usize);
-pub type Solution = (Setting, Time, Vec<usize>, Option<usize>);
+/// MDP Types
+pub type ProbemaxState = (Vec<bool>, Vec<usize>);
+pub type ProbingAction = usize;
 
-#[derive(Debug, PartialEq, Clone)]
-/// Type of Goal function
-pub enum GoalType {
-    /// Max-Edge-Variant
+/// Settings/Solutions
+pub type Setting = (GoalFunction, Algorithm, usize, usize);
+pub type Solution = (Setting, Time, Vec<usize>, usize);
+
+/// Possible GoalFunctions
+#[derive(Debug, Clone, PartialEq)]
+pub enum GoalFunction {
+    /// ProbeMax-Reduction with MAX-Distribution
     MAX,
-    /// Sum-Edge-Variant
+    /// ProbeMax-Reduction with SUM-Distribution
     SUM,
-    /// Coverage-Variant
+    /// Maximum-Coverage Variant
     COV,
 }
 
-#[derive(Debug, PartialEq, Clone)]
-/// Algorithm
+/// Possible Algorithms
+#[derive(Debug, Clone, PartialEq)]
 pub enum Algorithm {
     /// Markov-Decision-Process
     MDP,
@@ -41,22 +47,35 @@ pub enum Algorithm {
     OPT,
     /// All Algorithms above
     ALL,
-    /// All Algorithms above expect MDP
+    /// All Algorithms above without MDP
     POLY,
-    /// Only NAMP, AMP, and OPT Algorithm
+    /// All Algorithms above without MDP and SCG
     FAST,
 }
 
-/// Allow parsing Algorithm from Structopt
+/// Allow parsing GoalFunction from String
+impl FromStr for GoalFunction {
+    type Err = &'static str;
+    fn from_str(goal: &str) -> Result<Self, Self::Err> {
+        match goal {
+            "MAX" => Ok(GoalFunction::MAX),
+            "SUM" => Ok(GoalFunction::SUM),
+            "COV" => Ok(GoalFunction::COV),
+            _ => Err("Could not parse GoalFunction!"),
+        }
+    }
+}
+
+/// Allow parsing Algorithm from String
 impl FromStr for Algorithm {
     type Err = &'static str;
-    fn from_str(algo: &str) -> Result<Self, Self::Err> {
-        match algo {
+    fn from_str(algorithm: &str) -> Result<Self, Self::Err> {
+        match algorithm {
             "MDP" => Ok(Algorithm::MDP),
             "AMP" => Ok(Algorithm::AMP),
             "SCG" => Ok(Algorithm::SCG),
-            "OPT" => Ok(Algorithm::OPT),
             "ALL" => Ok(Algorithm::ALL),
+            "OPT" => Ok(Algorithm::OPT),
             "NAMP" => Ok(Algorithm::NAMP),
             "POLY" => Ok(Algorithm::POLY),
             "FAST" => Ok(Algorithm::FAST),
@@ -65,78 +84,76 @@ impl FromStr for Algorithm {
     }
 }
 
-/// Checks if two numbers of f64 are close enough to let their difference be considered a numerical error
+/// Are two f64 close enough to be considered the same
 pub fn is_close(a: f64, b: f64, tol: Option<f64>) -> bool {
     (b - a).abs() < tol.unwrap_or(1e-09)
 }
 
-/// Generates all possible combination of length n and values 0..v
-pub fn combinations(n: usize, values: usize) -> Vec<Vec<usize>> {
+/// Get all possible combinations of {0,...,v - 1} of length n
+pub fn combinations(n: usize, v: usize) -> Vec<Vec<usize>> {
     if n == 0 {
         return vec![vec![]];
     }
-    let mut val: Vec<Vec<usize>> = Vec::new();
-    for v in 0..values {
-        for vector in combinations(n - 1, values) {
-            let mut x: Vec<usize> = Vec::with_capacity(n);
-            x.push(v);
-            for z in vector {
-                x.push(z);
+    let mut values: Vec<Vec<usize>> = Vec::new();
+    for val in 0..v {
+        for vec in combinations(n - 1, v) {
+            let mut z: Vec<usize> = Vec::with_capacity(n);
+            z.push(val);
+            for t in vec {
+                z.push(t);
             }
-            val.push(x);
+            values.push(z);
         }
     }
-
-    val.into_iter()
-        .map(|v| v.into_iter().rev().collect::<Vec<usize>>())
-        .collect::<Vec<Vec<usize>>>()
+    values
+        .into_iter()
+        .map(|vec| vec.into_iter().rev().collect::<Vec<usize>>())
+        .collect()
 }
 
-/// Get all possible combinations of true/false of length n (for subset calculations)
-pub fn boolean_combination(n: usize) -> Vec<Vec<bool>> {
+/// Get all possible combinations of {true, false} of length n
+pub fn boolean_combinations(n: usize) -> Vec<Vec<bool>> {
     if n == 0 {
-        return vec![];
+        return vec![vec![]];
     }
     combinations(n, 2)
         .into_iter()
-        .map(|v| v.into_iter().map(|u| u == 1).collect::<Vec<bool>>())
-        .collect::<Vec<Vec<bool>>>()
+        .map(|vec| vec.into_iter().map(|val| val == 1).collect::<Vec<bool>>())
+        .collect()
 }
 
-/// Converts a vector of boolean (binary reprensentation) to its equivalent number
+/// Convert a boolean array to its coherrent binary number
 pub fn boolean_array_to_usize(arr: &Vec<bool>) -> usize {
     let mut val: usize = 0;
     for k in 0..arr.len() {
         if arr[k] {
-            val += 2_usize.pow(k as u32);
+            val += 2usize.pow(k as u32);
         }
     }
-
     val
 }
 
-/// Converts a vector of usize (representation in base vs) to its equivalent number
+/// Convert a usize array to its ciherrent number in base vs
 pub fn usize_array_to_usize(arr: &Vec<usize>, vs: usize) -> usize {
     let mut val: usize = 0;
     for k in 0..arr.len() {
         val += arr[k] * vs.pow(k as u32);
     }
-
     val
 }
 
-/// Convert a BPR-model into a suitable output format
-pub fn model_to_string(bpr: &BipartiteRegulatorProbing) -> String {
+/// Convert a BPR to a suitable String to print
+pub fn bpr_to_string(bpr: &BipartiteRegulatorProbing) -> String {
     format!(
-        "Name: {} -- na: {} -- nb: {} -- vs: {}",
-        bpr.get_name(),
+        "Name: {:?} -- na: {} -- nb: {} -- vs: {}",
+        bpr.get_coding(),
         bpr.get_na(),
         bpr.get_nb(),
         bpr.get_vs()
     )
 }
 
-/// COnvert a Solution into a suitable output format
+/// Convert a Solution to a suitable String to print
 pub fn solution_to_string(solution: &Solution) -> String {
     format!(
         "Goal: {:?} -- Algorithm: {:?} -- k: {} -- l: {} -- Time: {} -- Subset: {:?} -- Value: {}",
@@ -146,6 +163,6 @@ pub fn solution_to_string(solution: &Solution) -> String {
         solution.0 .3,
         solution.1,
         solution.2,
-        solution.3.unwrap_or(0)
+        solution.3
     )
 }
