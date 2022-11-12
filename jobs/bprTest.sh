@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=bprFast
+#SBATCH --job-name=bprTest
 #SBATCH --partition=test
 #SBATCH --nodes=1
 #SBATCH --ntasks=3
