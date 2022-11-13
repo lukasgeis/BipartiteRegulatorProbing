@@ -471,7 +471,7 @@ impl<'a> ProbemaxMDP<'a> {
         let vs: usize = match goal {
             GoalFunction::COV => panic!("There is no ProbeMax-Reduction for Coverage!"),
             GoalFunction::MAX => model.get_vs(),
-            GoalFunction::SUM => model.get_vs() * model.get_na(),
+            GoalFunction::SUM => (model.get_vs() - 1) * model.get_nb() + 1,
         };
 
         Self {

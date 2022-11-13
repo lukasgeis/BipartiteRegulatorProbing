@@ -2,7 +2,7 @@
 #SBATCH --job-name=bprAll
 #SBATCH --partition=general1
 #SBATCH --nodes=1
-#SBATCH --ntasks=3
+#SBATCH --ntasks=6
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=1200
 #SBATCH --time=100:00:00
@@ -11,5 +11,7 @@
 
 for NUM in 3 4 5 
 do
-    target/release/bpr --log /scratch/memhierarchy/geis/bpr/logs/all/OUT_$NUM --na $((2**$NUM)) --nb $((2**$NUM)) --vs $NUM --iterations 5 --instances 10 --algorithm ALL --parameters $((2**$NUM - 2)) &
+    target/release/bpr --log /scratch/memhierarchy/geis/bpr/logs/all/MAX_$NUM --na $((2**$NUM)) --nb $((2**$NUM)) --vs $NUM --iterations 5 --instances 10 --goal MAX --algorithm ALL --parameters $((2**$NUM - 2)) &
+    target/release/bpr --log /scratch/memhierarchy/geis/bpr/logs/all/SUM_$NUM --na $((2**$NUM)) --nb $((2**$NUM)) --vs $NUM --iterations 5 --instances 10 --goal SUM --algorithm ALL --parameters $((2**$NUM - 2)) &
 done
+
