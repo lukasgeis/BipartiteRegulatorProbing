@@ -131,6 +131,9 @@ impl DiscreteDistribution {
 
     /// Get expected value of values less or equal to k
     pub fn expected_less(&self, k: usize) -> f64 {
+        if k >= self.vs {
+            return 0.0;
+        }
         self.expected[k]
     }
 
@@ -138,8 +141,10 @@ impl DiscreteDistribution {
     pub fn expected_greater(&self, k: usize) -> f64 {
         if k == 0 {
             self.expected[self.vs - 1]
-        } else {
+        } else if k < self.vs {
             self.expected[self.vs - 1] - self.expected[k - 1]
+        } else {
+            return 0.0;
         }
     }
 

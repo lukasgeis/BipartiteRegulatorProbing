@@ -51,7 +51,6 @@ fn main() -> std::io::Result<()> {
         .create(true)
         .open(opt.log.as_ref().unwrap())
         .unwrap();
-
     for _ in 0..opt.iterations {
         let mut bpr: BipartiteRegulatorProbing =
             BipartiteRegulatorProbing::new(opt.na, opt.nb, opt.vs);
