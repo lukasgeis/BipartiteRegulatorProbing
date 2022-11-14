@@ -57,14 +57,17 @@ fn main() -> std::io::Result<()> {
         let bpr_output: String = bpr_to_string(&bpr);
         for _ in 0..opt.instances {
             let mut instance: Instance = bpr.create_instance();
-            for num_k in 1..opt.parameters {
-                let k: usize = num_k * opt.na / opt.parameters;
-                for num_l in 1..=opt.parameters {
-                    let l: usize = num_l * k / opt.parameters;
-                    if k > 0 && l > 0 {
-                        if !opt.not_opt && num_k == 1 && opt.algorithm != Algorithm::OPT {
+            // Run OPT on all possible l values
+            if !opt.not_opt {
+                let mut l_values_run: Vec<usize> = Vec::new();
+                for opt_k in 1..opt.parameters {
+                    let k: usize = opt_k * opt.na / opt.parameters;
+                    for opt_l in 1..=opt.parameters {
+                        let l: usize = opt_l * k / opt.parameters;
+                        if k > 0 && l > 0 && !l_values_run.contains(&l) {
+                            l_values_run.push(l);
                             let all_solutions: Vec<Solution> =
-                                instance.run_algorithm(opt.goal.clone(), Algorithm::OPT, k, l);
+                                instance.run_algorithm(opt.goal.clone(), Algorithm::OPT, 0, l);
                             if all_solutions.len() > 0 {
                                 for sol in all_solutions {
                                     if let Err(e) = writeln!(
@@ -79,6 +82,15 @@ fn main() -> std::io::Result<()> {
                                 }
                             }
                         }
+                    }
+                }
+            }
+            // Run the specified algorithms
+            for num_k in 1..opt.parameters {
+                let k: usize = num_k * opt.na / opt.parameters;
+                for num_l in 1..=opt.parameters {
+                    let l: usize = num_l * k / opt.parameters;
+                    if k > 0 && l > 0 {
                         let all_solutions: Vec<Solution> =
                             instance.run_algorithm(opt.goal.clone(), opt.algorithm.clone(), k, l);
                         if all_solutions.len() > 0 {

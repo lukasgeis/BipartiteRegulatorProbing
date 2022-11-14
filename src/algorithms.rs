@@ -115,15 +115,22 @@ impl<'a> Instance<'a> {
                         let mut optimal_subset: Vec<usize> = Vec::with_capacity(l);
 
                         for _ in 0..l {
-                            let argmax: usize = (0..self.bpr.get_na()).into_iter().filter(|i| !optimal_subset.contains(i)).map(|a| -> (usize, usize) {
-                                let mut expected_reward: usize = 0;
-                                for b in 0..self.bpr.get_nb() {
-                                    if self.get_realization(a, b) > current_value[b] {
-                                        expected_reward += self.get_realization(a, b) - current_value[b];
+                            let argmax: usize = (0..self.bpr.get_na())
+                                .into_iter()
+                                .filter(|i| !optimal_subset.contains(i))
+                                .map(|a| -> (usize, usize) {
+                                    let mut expected_reward: usize = 0;
+                                    for b in 0..self.bpr.get_nb() {
+                                        if self.get_realization(a, b) > current_value[b] {
+                                            expected_reward +=
+                                                self.get_realization(a, b) - current_value[b];
+                                        }
                                     }
-                                }
-                                (a, expected_reward)
-                            }).max_by(|(_, a), (_, b)| a.cmp(b)).unwrap().0;
+                                    (a, expected_reward)
+                                })
+                                .max_by(|(_, a), (_, b)| a.cmp(b))
+                                .unwrap()
+                                .0;
                             for b in 0..self.bpr.get_nb() {
                                 if self.get_realization(argmax, b) > current_value[b] {
                                     current_value[b] = self.get_realization(argmax, b);
@@ -135,7 +142,7 @@ impl<'a> Instance<'a> {
                             (GoalFunction::COV, Algorithm::OPT, k, l),
                             time.elapsed().as_secs_f64(),
                             optimal_subset,
-                            current_value.into_iter().sum()
+                            current_value.into_iter().sum(),
                         )];
                     }
                     Algorithm::AMP => {
@@ -145,14 +152,22 @@ impl<'a> Instance<'a> {
                         let mut probed_subset: Vec<usize> = Vec::with_capacity(k);
 
                         for _ in 0..l {
-                            println!("HERE -> {}", l);
-                            let argmax: usize = (0..self.bpr.get_na()).into_iter().filter(|i| !probed_subset.contains(i)).map(|a| -> (usize, f64) {
-                                let mut expected_reward: f64 = 0.0;
-                                for b in 0..self.bpr.get_nb() {
-                                    expected_reward += self.bpr.get_edge(a, b).expected_greater(current_value[b] + 1);
-                                }
-                                (a, expected_reward)
-                            }).max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap()).unwrap().0;
+                            let argmax: usize = (0..self.bpr.get_na())
+                                .into_iter()
+                                .filter(|i| !probed_subset.contains(i))
+                                .map(|a| -> (usize, f64) {
+                                    let mut expected_reward: f64 = 0.0;
+                                    for b in 0..self.bpr.get_nb() {
+                                        expected_reward += self
+                                            .bpr
+                                            .get_edge(a, b)
+                                            .expected_greater(current_value[b] + 1);
+                                    }
+                                    (a, expected_reward)
+                                })
+                                .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+                                .unwrap()
+                                .0;
                             for b in 0..self.bpr.get_nb() {
                                 if self.get_realization(argmax, b) > current_value[b] {
                                     current_value[b] = self.get_realization(argmax, b);
@@ -160,16 +175,131 @@ impl<'a> Instance<'a> {
                             }
                             probed_subset.push(argmax);
                         }
+
+                        if l == k {
+                            return vec![(
+                                (GoalFunction::COV, Algorithm::AMP, k, l),
+                                time.elapsed().as_secs_f64(),
+                                probed_subset,
+                                current_value.into_iter().sum(),
+                            )];
+                        }
+
+                        for _ in l..k {
+                            let argmax: usize = (0..self.bpr.get_na())
+                                .into_iter()
+                                .filter(|i| !probed_subset.contains(i))
+                                .map(|a| -> (usize, f64) {
+                                    // Run Greedy Algorithm to evaluate Expected Value
+                                    let mut temp_subset: Vec<usize> = probed_subset.clone();
+                                    temp_subset.push(a);
+                                    let mut test_subset: Vec<usize> = Vec::with_capacity(l);
+                                    let mut test_values: Vec<f64> = vec![0.0; self.bpr.get_nb()];
+                                    for _ in 0..l {
+                                        let test_argmax: usize = temp_subset
+                                            .iter()
+                                            .filter(|i| !test_subset.contains(i))
+                                            .map(|test_a| -> (usize, f64) {
+                                                let mut test_reward: f64 = 0.0;
+                                                for b in 0..self.bpr.get_nb() {
+                                                    if *test_a != a {
+                                                        if self.get_realization(*test_a, b) as f64
+                                                            > test_values[b]
+                                                        {
+                                                            test_reward += (self
+                                                                .get_realization(*test_a, b)
+                                                                as f64
+                                                                - test_values[b])
+                                                                as f64;
+                                                        }
+                                                    } else {
+                                                        if self
+                                                            .bpr
+                                                            .get_edge(*test_a, b)
+                                                            .expected_value()
+                                                            > test_values[b]
+                                                        {
+                                                            test_reward += self
+                                                                .bpr
+                                                                .get_edge(*test_a, b)
+                                                                .expected_value()
+                                                                - test_values[b];
+                                                        }
+                                                    }
+                                                }
+                                                (*test_a, test_reward)
+                                            })
+                                            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+                                            .unwrap()
+                                            .0;
+                                        for b in 0..self.bpr.get_nb() {
+                                            if test_argmax != a {
+                                                if self.get_realization(test_argmax, b) as f64
+                                                    > test_values[b]
+                                                {
+                                                    test_values[b] =
+                                                        self.get_realization(test_argmax, b) as f64;
+                                                }
+                                            } else {
+                                                if self
+                                                    .bpr
+                                                    .get_edge(test_argmax, b)
+                                                    .expected_value()
+                                                    > test_values[b]
+                                                {
+                                                    test_values[b] = self
+                                                        .bpr
+                                                        .get_edge(test_argmax, b)
+                                                        .expected_value();
+                                                }
+                                            }
+                                        }
+                                        test_subset.push(test_argmax);
+                                    }
+
+                                    (a, test_values.into_iter().sum())
+                                })
+                                .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+                                .unwrap()
+                                .0;
+                            probed_subset.push(argmax);
+                        }
+
+                        let mut final_values: Vec<usize> = vec![0; self.bpr.get_nb()];
+                        let mut final_subset: Vec<usize> = Vec::with_capacity(l);
+                        for _ in 0..l {
+                            let argmax: usize = probed_subset
+                                .iter()
+                                .filter(|i| !final_subset.contains(i))
+                                .map(|a| -> (usize, usize) {
+                                    let mut expected_reward: usize = 0;
+                                    for b in 0..self.bpr.get_nb() {
+                                        if self.get_realization(*a, b) > final_values[b] {
+                                            expected_reward +=
+                                                self.get_realization(*a, b) - final_values[b];
+                                        }
+                                    }
+                                    (*a, expected_reward)
+                                })
+                                .max_by(|(_, a), (_, b)| a.cmp(b))
+                                .unwrap()
+                                .0;
+                            for b in 0..self.bpr.get_nb() {
+                                if self.get_realization(argmax, b) > final_values[b] {
+                                    final_values[b] = self.get_realization(argmax, b);
+                                }
+                            }
+                            final_subset.push(argmax);
+                        }
+
                         return vec![(
                             (GoalFunction::COV, Algorithm::AMP, k, l),
                             time.elapsed().as_secs_f64(),
                             probed_subset,
-                            current_value.into_iter().sum()
+                            final_values.into_iter().sum(),
                         )];
                     }
-                    Algorithm::NAMP => {
-
-                    }
+                    Algorithm::NAMP => {}
                     _ => {
                         panic!("Only OPT & AMP & NAMP are implemented for COV!");
                     }
@@ -338,7 +468,8 @@ impl<'a> Instance<'a> {
                                 .push(self.probemax_realizations[index].as_ref().unwrap()[argmax]);
                         }
 
-                        let mut values: Vec<usize> = values_heap.into_sorted_vec().into_iter().rev().collect();
+                        let mut values: Vec<usize> =
+                            values_heap.into_sorted_vec().into_iter().rev().collect();
                         values.truncate(l);
 
                         return vec![(
