@@ -1,9 +1,7 @@
 # Binaries
 /target
 
-# Testing
-log/testlog
-
 # Local Testing
 data
 log
+EXAMPLELOG
