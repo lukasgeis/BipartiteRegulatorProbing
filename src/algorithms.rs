@@ -106,7 +106,41 @@ impl<'a> Instance<'a> {
         let na: usize = self.bpr.get_na();
 
         match goal {
-            GoalFunction::COV => {}
+            GoalFunction::COV => {
+                match algorithm {
+                    Algorithm::OPT => {
+                        let time = std::time::Instant::now();
+
+                        let mut current_value: Vec<usize> = vec![0; self.bpr.get_nb()];
+                        let mut optimal_subset: Vec<usize> = Vec::with_capacity(l);
+
+                        for _ in 0..l {
+                            let argmax: usize = (0..self.bpr.get_na()).into_iter().filter(|i| !optimal_subset.contains(i)).map(|a| -> (usize, usize) {
+                                let mut expected_reward: usize = 0;
+                                for b in 0..self.bpr.get_nb() {
+                                    if self.get_realization(a, b) > current_value[b] {
+                                        expected_reward += self.get_realization(a, b) - current_value[b];
+                                    }
+                                }
+                                (a, expected_reward)
+                            }).max_by(|(_, a), (_, b)| b.cmp(a)).unwrap().0;
+                            for b in 0..self.bpr.get_nb() {
+                                if self.get_realization(argmax, b) > current_value[b] {
+                                    current_value[b] = self.get_realization(argmax, b);
+                                }
+                            }
+                            optimal_subset.push(argmax);
+                        }
+                        return vec![(
+                            (GoalFunction::COV, Algorithm::OPT, k, l),
+                            time.elapsed().as_secs_f64(),
+                            optimal_subset,
+                            current_value.into_iter().sum()
+                        )];
+                    }
+                    _ => {}
+                }
+            }
             GoalFunction::MAX | GoalFunction::SUM => {
                 let index: usize = (goal == GoalFunction::SUM) as usize;
                 match algorithm {
