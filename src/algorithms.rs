@@ -123,7 +123,7 @@ impl<'a> Instance<'a> {
                                     }
                                 }
                                 (a, expected_reward)
-                            }).max_by(|(_, a), (_, b)| b.cmp(a)).unwrap().0;
+                            }).max_by(|(_, a), (_, b)| a.cmp(b)).unwrap().0;
                             for b in 0..self.bpr.get_nb() {
                                 if self.get_realization(argmax, b) > current_value[b] {
                                     current_value[b] = self.get_realization(argmax, b);
@@ -138,7 +138,41 @@ impl<'a> Instance<'a> {
                             current_value.into_iter().sum()
                         )];
                     }
-                    _ => {}
+                    Algorithm::AMP => {
+                        let time = std::time::Instant::now();
+
+                        let mut current_value: Vec<usize> = vec![0; self.bpr.get_nb()];
+                        let mut probed_subset: Vec<usize> = Vec::with_capacity(k);
+
+                        for _ in 0..l {
+                            println!("HERE -> {}", l);
+                            let argmax: usize = (0..self.bpr.get_na()).into_iter().filter(|i| !probed_subset.contains(i)).map(|a| -> (usize, f64) {
+                                let mut expected_reward: f64 = 0.0;
+                                for b in 0..self.bpr.get_nb() {
+                                    expected_reward += self.bpr.get_edge(a, b).expected_greater(current_value[b] + 1);
+                                }
+                                (a, expected_reward)
+                            }).max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap()).unwrap().0;
+                            for b in 0..self.bpr.get_nb() {
+                                if self.get_realization(argmax, b) > current_value[b] {
+                                    current_value[b] = self.get_realization(argmax, b);
+                                }
+                            }
+                            probed_subset.push(argmax);
+                        }
+                        return vec![(
+                            (GoalFunction::COV, Algorithm::AMP, k, l),
+                            time.elapsed().as_secs_f64(),
+                            probed_subset,
+                            current_value.into_iter().sum()
+                        )];
+                    }
+                    Algorithm::NAMP => {
+
+                    }
+                    _ => {
+                        panic!("Only OPT & AMP & NAMP are implemented for COV!");
+                    }
                 }
             }
             GoalFunction::MAX | GoalFunction::SUM => {
@@ -296,7 +330,7 @@ impl<'a> Instance<'a> {
                                             .expected_greater(values[values.len() - l] + 1),
                                     )
                                 })
-                                .max_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap())
+                                .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
                                 .unwrap()
                                 .0;
                             probed_subset.push(argmax);
@@ -304,7 +338,7 @@ impl<'a> Instance<'a> {
                                 .push(self.probemax_realizations[index].as_ref().unwrap()[argmax]);
                         }
 
-                        let mut values = values_heap.into_sorted_vec();
+                        let mut values: Vec<usize> = values_heap.into_sorted_vec().into_iter().rev().collect();
                         values.truncate(l);
 
                         return vec![(
