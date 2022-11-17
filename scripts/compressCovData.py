@@ -162,7 +162,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Compress COV data")
     parser.add_argument("--input", metavar = "", help = "Input Directory", required = True)
     parser.add_argument("--output", metavar = "", help = "Output File", required = True)
-    parser.add_argument("--worst", metavar = "", type = bool, help = "Worst case instead of average")
+    parser.add_argument("--worst", metavar = "", type = bool, default = False, help = "Worst case instead of average")
 
     args = parser.parse_args()
 

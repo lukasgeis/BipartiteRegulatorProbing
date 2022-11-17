@@ -10,4 +10,4 @@
 #SBATCH --mail-type=FAIL
 
 python3 scripts/compressCovData.py --input /scratch/memhierarchy/geis/bpr/logs/cov --output /scratch/memhierarchy/geis/bpr/logs/COV_COMPRESSED &
-python3 scripts/compressCovData.py --input /scratch/memhierarchy/geis/bpr/logs/cov --output /scratch/memhierarchy/geis/bpr/logs/COV_WORST_COMPRESSED --worst &
+python3 scripts/compressCovData.py --input /scratch/memhierarchy/geis/bpr/logs/cov --output /scratch/memhierarchy/geis/bpr/logs/COV_WORST_COMPRESSED --worst True &
