@@ -2,7 +2,7 @@ import os
 import pickle
 import argparse
 
-def main(inputDir: str, output: str):
+def main(inputDir: str, output: str, worst: bool):
     compressedData = []
 
     for file in os.listdir(inputDir):
@@ -83,18 +83,28 @@ def main(inputDir: str, output: str):
                     k += 1
             for k in [1,2,3]:
                 for l in [1,2,3,4]:
-                    vAmp = 0.0
-                    cAmp = 0
-                    vNamp = 0.0
-                    cNamp = 0
-                    for entry in bprData[k][l]:
-                        if entry[0] > 0.0:
-                            vAmp += entry[0]
-                            cAmp += 1
-                        if entry[1] > 0.0:
-                            vNamp += entry[1]
-                            cNamp += 1
-                    cBprData[k][l].append((vAmp / max(1, cAmp), vNamp / max(1, cNamp)))
+                    if worst:
+                        vAmp = 1.0
+                        vNamp = 1.0
+                        for entry in bprData[k][l]:
+                            if entry[0] < vAmp:
+                                vAmp = entry[0]
+                            if entry[1] < vNamp:
+                                vNamp = entry[1]
+                        cBprData[k][l].append((vAmp, vNamp))
+                    else:
+                        vAmp = 0.0
+                        cAmp = 0
+                        vNamp = 0.0
+                        cNamp = 0
+                        for entry in bprData[k][l]:
+                            if entry[0] > 0.0:
+                                vAmp += entry[0]
+                                cAmp += 1
+                            if entry[1] > 0.0:
+                                vNamp += entry[1]
+                                cNamp += 1
+                        cBprData[k][l].append((vAmp / max(1, cAmp), vNamp / max(1, cNamp)))
         tBprData = {
             1: {
                 1: None,
@@ -117,19 +127,29 @@ def main(inputDir: str, output: str):
         }
         for k in [1,2,3]:
             for l in [1,2,3,4]:
-                vAmp = 0.0
-                cAmp = 0
-                vNamp = 0.0
-                cNamp = 0
-                for entry in cBprData[k][l]:
+                if worst:
+                    vAmp = 1.0
+                    vNamp = 1.0
                     for entry in bprData[k][l]:
-                        if entry[0] > 0.0:
-                            vAmp += entry[0]
-                            cAmp += 1
-                        if entry[1] > 0.0:
-                            vNamp += entry[1]
-                            cNamp += 1
-                    tBprData[k][l] = (vAmp / max(1, cAmp), vNamp / max(1, cNamp))
+                        if entry[0] < vAmp:
+                            vAmp = entry[0]
+                        if entry[1] < vNamp:
+                            vNamp = entry[1]
+                    tBprData[k][l] = (vAmp, vNamp)
+                else:
+                    vAmp = 0.0
+                    cAmp = 0
+                    vNamp = 0.0
+                    cNamp = 0
+                    for entry in cBprData[k][l]:
+                        for entry in bprData[k][l]:
+                            if entry[0] > 0.0:
+                                vAmp += entry[0]
+                                cAmp += 1
+                            if entry[1] > 0.0:
+                                vNamp += entry[1]
+                                cNamp += 1
+                        tBprData[k][l] = (vAmp / max(1, cAmp), vNamp / max(1, cNamp))
 
         compressedData.append((header, tBprData))
         
@@ -142,7 +162,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Compress COV data")
     parser.add_argument("--input", metavar = "", help = "Input Directory", required = True)
     parser.add_argument("--output", metavar = "", help = "Output File", required = True)
+    parser.add_argument("--worst", metavar = "", type = bool, help = "Worst case instead of average")
 
     args = parser.parse_args()
 
-    main(args.input, args.output)
+    main(args.input, args.output, args.worst)
