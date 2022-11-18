@@ -32,12 +32,12 @@ pub struct BipartiteRegulatorProbing {
 
 impl BipartiteRegulatorProbing {
     /// Creates a new BPR Model
-    pub fn new(na: usize, nb: usize, vs: usize) -> Self {
+    pub fn new(na: usize, nb: usize, vs: usize, poisson: bool) -> Self {
         let mut edges: Vec<Vec<DiscreteDistribution>> = Vec::with_capacity(na);
         for _ in 0..na {
             let mut regulator: Vec<DiscreteDistribution> = Vec::with_capacity(nb);
             for _ in 0..nb {
-                regulator.push(DiscreteDistribution::new(vs));
+                regulator.push(DiscreteDistribution::new(vs, poisson));
             }
             edges.push(regulator);
         }

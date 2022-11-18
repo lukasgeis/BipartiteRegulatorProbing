@@ -89,6 +89,11 @@ pub fn is_close(a: f64, b: f64, tol: Option<f64>) -> bool {
     (b - a).abs() < tol.unwrap_or(1e-09)
 }
 
+/// Get Factorial of Number
+pub fn factorial(n: usize) -> usize {
+    (1..=n).product()
+}
+
 /// Get all possible combinations of {0,...,v - 1} of length n
 pub fn combinations(n: usize, v: usize) -> Vec<Vec<usize>> {
     if n == 0 {

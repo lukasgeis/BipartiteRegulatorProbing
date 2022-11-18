@@ -1,6 +1,8 @@
+use std::f64::consts::E;
+
 use rand::Rng;
 
-use crate::{is_close, Probability, Reward};
+use crate::{is_close, Probability, Reward, factorial};
 
 /// Structure representing a DiscreteDistribution
 #[derive(Debug, Clone, PartialEq)]
@@ -13,7 +15,7 @@ pub struct DiscreteDistribution {
 
 impl DiscreteDistribution {
     /// Creates a new DiscreteDistribution
-    pub fn new(vs: usize) -> Self {
+    pub fn new(vs: usize, poisson: bool) -> Self {
         if vs <= 1 {
             return Self {
                 vs: 1,
@@ -24,33 +26,62 @@ impl DiscreteDistribution {
         }
 
         let mut rng = rand::thread_rng();
-        let mut probabilities: Vec<Probability> = Vec::with_capacity(vs);
-        let mut total_value: Probability = 0.0;
 
-        for _ in 0..vs {
-            let p: Probability = rng.gen();
-            total_value += p;
-            probabilities.push(p);
+        if !poisson {
+            let mut probabilities: Vec<Probability> = Vec::with_capacity(vs);
+            let mut total_value: Probability = 0.0;
+
+            for _ in 0..vs {
+                let p: Probability = rng.gen();
+                total_value += p;
+                probabilities.push(p);
+            }
+
+            let ep: Vec<Probability> = probabilities.into_iter().map(|p| p / total_value).collect();
+            let mut cp: Vec<Probability> = Vec::with_capacity(vs);
+            let mut ev: Vec<Probability> = Vec::with_capacity(vs);
+
+            cp.push(ep[0]);
+            ev.push(0.0);
+
+            for k in 1..vs {
+                cp.push(cp[k - 1] + ep[k]);
+                ev.push(ev[k - 1] + k as f64 * ep[k]);
+            }
+
+            return Self {
+                vs: vs,
+                exact: ep,
+                cumulative: cp,
+                expected: ev,
+            };
+        } else {
+            let lambda: f64 = rng.gen_range(0.5..2.5);
+            let e_term: f64 = E.powf(-lambda);
+            let mut ep: Vec<Probability> = Vec::with_capacity(vs);
+            for k in 0..(vs - 1) {
+                ep.push(lambda.powi(k as i32) * e_term / factorial(k) as f64);
+            }
+            ep.push(1.0 - ep.iter().sum::<f64>());
+
+            let mut cp: Vec<Probability> = Vec::with_capacity(vs);
+            let mut ev: Vec<Probability> = Vec::with_capacity(vs);
+
+            cp.push(ep[0]);
+            ev.push(0.0);
+
+            for k in 1..vs {
+                cp.push(cp[k - 1] + ep[k]);
+                ev.push(ev[k - 1] + k as f64 * ep[k]);
+            }
+
+            return Self {
+                vs: vs,
+                exact: ep,
+                cumulative: cp,
+                expected: ev,
+            };
         }
-
-        let ep: Vec<Probability> = probabilities.into_iter().map(|p| p / total_value).collect();
-        let mut cp: Vec<Probability> = Vec::with_capacity(vs);
-        let mut ev: Vec<Probability> = Vec::with_capacity(vs);
-
-        cp.push(ep[0]);
-        ev.push(0.0);
-
-        for k in 1..vs {
-            cp.push(cp[k - 1] + ep[k]);
-            ev.push(ev[k - 1] + k as f64 * ep[k]);
-        }
-
-        return Self {
-            vs: vs,
-            exact: ep,
-            cumulative: cp,
-            expected: ev,
-        };
     }
 
     /// Creates a new Distribution from a given list of proabilities

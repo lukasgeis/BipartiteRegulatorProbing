@@ -40,6 +40,9 @@ struct Opt {
     parameters: usize,
 
     #[structopt(long)]
+    poisson: bool,
+
+    #[structopt(long)]
     not_opt: bool,
 }
 
@@ -53,7 +56,7 @@ fn main() -> std::io::Result<()> {
         .unwrap();
     for _ in 0..opt.iterations {
         let mut bpr: BipartiteRegulatorProbing =
-            BipartiteRegulatorProbing::new(opt.na, opt.nb, opt.vs);
+            BipartiteRegulatorProbing::new(opt.na, opt.nb, opt.vs, opt.poisson);
         let bpr_output: String = bpr_to_string(&bpr);
         for _ in 0..opt.instances {
             let mut instance: Instance = bpr.create_instance();
