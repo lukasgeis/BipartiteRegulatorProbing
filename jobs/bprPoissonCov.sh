@@ -9,7 +9,7 @@
 #SBATCH --no-requeue
 #SBATCH --mail-type=FAIL
 
-OUTPUTDIR="/scratch/memhierarchy/geis/logs/bpr/cov"
+OUTPUTDIR="/scratch/memhierarchy/geis/bpr/logs/cov"
 
 for NUM in 1 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70 80 90 100 125
 do
