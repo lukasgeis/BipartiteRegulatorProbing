@@ -11,9 +11,15 @@ def main(inputDir: str, output: str):
             if header is None:
                 header = int(content[1]) * int(content[2]) * int(content[3])
             if header not in data:
-                data[header] = [0.0, 0]
-            data[header][0] += float(content[8])
-            data[header][1] += 1
+                data[header] = [[0.0, 0], [0.0, 0], [0.0, 0]]
+            if content[5] == "AMP":
+                idx = 0
+            elif content[5] == "NAMP":
+                idx = 1
+            else:
+                idx = 2
+            data[header][idx][0] += float(content[8])
+            data[header][idx][1] += 1
     
     with open(output, "wb") as outfile:
         pickle.dump(data, outfile)
