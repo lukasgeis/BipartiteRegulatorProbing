@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 plt.rcParams['text.usetex'] = True
 plt.rcParams['axes.titlepad'] = 10
 
-def main(inputDir: str):
+def main(inputDir: str, sGoal: str):
     fetchedData = {}
     for file in os.listdir(inputDir):
         with open(os.path.join(inputDir, file), "rb") as infile:
@@ -17,17 +17,18 @@ def main(inputDir: str):
                 fetchedData["cov"] = pickle.load(infile)
     data = {}
     for goal in fetchedData:
-        data[goal] = {
+        data[goal] = [{
             "x": [],
             "y": []
-        }
+        } for i in range(3)]
         for entry in fetchedData[goal]:
-            if fetchedData[goal][entry][1] > 0:
-                data[goal]["x"].append(entry)
-                data[goal]["y"].append(fetchedData[goal][entry][0] / fetchedData[goal][entry][1])
-
-        data[goal]["y"] = [t for _,t in sorted(zip(data[goal]["x"], data[goal]["y"]), key = lambda pair: pair[0])]
-        data[goal]["x"] = sorted(data[goal]["x"])
+            for i in range(3):
+                if fetchedData[goal][entry][i][1] > 0:
+                    data[goal][i]["x"].append(entry)
+                    data[goal][i]["y"].append(fetchedData[goal][entry][i][0] / fetchedData[goal][entry][i][1])
+        for i in range(3):
+            data[goal][i]["y"] = [t for _,t in sorted(zip(data[goal][i]["x"], data[goal][i]["y"]), key = lambda pair: pair[0])]
+            data[goal][i]["x"] = sorted(data[goal][i]["x"])
 
     colors = {
         "max": "red",
@@ -35,8 +36,9 @@ def main(inputDir: str):
         "cov": "green"
     }
 
-    for goal in data:
-        plt.plot(data[goal]["x"], data[goal]["y"], "-", color = colors[goal], label = goal.upper())
+    plt.plot(data[sGoal][2]["x"], data[sGoal][2]["y"], "-", color = "red", label = str(sGoal.upper()) + " - OPT" )
+    plt.plot(data[sGoal][0]["x"], data[sGoal][0]["y"], "--", color = "blue", label = str(sGoal.upper()) + " - AMP")
+    plt.plot(data[sGoal][1]["x"], data[sGoal][1]["y"], ":", color = "green", label = str(sGoal.upper()) + " - NAMP")
 
     plt.title("Average Running Time per Goal", fontsize = 23)
     plt.xlabel(r'$n_A \cdot n_B \cdot |\mathcal{V}|$', fontsize = 20)
@@ -50,7 +52,8 @@ def main(inputDir: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Plot Values Data")
     parser.add_argument("input", help = "Input Directory")
+    parser.add_argument("--goal", metavar = "", required = True)
 
     args = parser.parse_args()
 
-    main(args.input)
+    main(args.input, args.goal)
