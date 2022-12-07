@@ -40,8 +40,10 @@ def main(inputDir: str, sGoal: str):
     plt.plot(data[sGoal][0]["x"], data[sGoal][0]["y"], "--", color = "blue", label = str(sGoal.upper()) + " - AMP")
     plt.plot(data[sGoal][1]["x"], data[sGoal][1]["y"], ":", color = "green", label = str(sGoal.upper()) + " - NAMP")
 
+    plt.yscale("log")
+
     plt.title("Average Running Time per Goal", fontsize = 23)
-    plt.xlabel(r'$n_A \cdot n_B \cdot |\mathcal{V}|$', fontsize = 20)
+    plt.xlabel(r'$n_A \cdot n_B$', fontsize = 20)
     plt.ylabel(r'time in $s$', fontsize = 20)
     plt.legend(prop = {"size": 17})
 

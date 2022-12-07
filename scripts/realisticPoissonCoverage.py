@@ -3,7 +3,7 @@ import pickle
 import argparse
 
 def main(inputDir: str, output: str):
-    X = [1,2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100,125]
+    X = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
     Y = [[[0.0 for i in range(len(X))] for j in range(2)] for k in range(2)]
     Z = [0 for i in range(len(X))]
 
