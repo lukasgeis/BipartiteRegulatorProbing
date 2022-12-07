@@ -9,7 +9,7 @@ def main(inputDir: str, output: str):
         for line in open(os.path.join(inputDir, file), "r").readlines():
             content = [x.split(": ")[1] for x in line.split(" -- ")]
             if header is None:
-                header = int(content[1]) * int(content[2]) * int(content[3])
+                header = int(content[1]) * int(content[2])
             if header not in data:
                 data[header] = [[0.0, 0], [0.0, 0], [0.0, 0]]
             if content[5] == "AMP":
