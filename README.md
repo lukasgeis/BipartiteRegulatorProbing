@@ -29,49 +29,72 @@ python3 scripts/createData.py --number <Number of Graphs> \
 ```
 You can see an example file here: [EXAMPLE](EXAMPLE)
 
+Alternatively, you can create graph instances at runtim with prespecified parameters
+
 ### Running the algorithms
 As there are multiple possibilities of choosing $k$ and $\ell$ for every graph with $n_A \mathit{Regulators}$, there are multiple ways to run algorithms all using the same main binary created.
 The standard prefix is always
 ```bash
-target/release/bpr --input <Input Graph file> \
+target/release/bpr --file <Input Graph file> \
     --log <Path to log-file> \
-    --iterations <Number of Instances> \
-    --algorithm <ALGORITHM> 
-    [--input-time <Path to log-file>]
-    [--exclude-opt]
+    --instances <Number of Instances> \
+    --goal <Goal Function> \
+    --algorithm <Algorithm> \
+    --parameters <Number> \
+    [--not-opt]
 ```
-where input-time is a logfile to log the time it takes to read the graph. For a list of which algorithms to use, see [Algorithms](#algorithms). To specify which $k$ and $\ell$ to run on, you can either use 
+Parameters is used to run on every possible fraction-combination of $k$ and $\ell$. Namely, if `parameters` $= 2$, then the algorithms will run on $k = n_A, \frac{1}{2}n_A$ and $\ell = k, \frac{1}{2}k$.
+
+If you wish to create graph instances at runtime, instead use
 ```bash
--k <Number> -l <Number>
+target/release/bpr --log <Path to log-file> \
+    --na <Number of Regulators> \
+    --nb <Number of Positions> \
+    --vs <Size of Support> \
+    --iterations <Number of Graph Instances> \
+    --instances <Number of Instances per Graph Instance> \
+    --parameters <Parameters as above> \
+    --goal <Goal Function> \
+    --algorithm <Algorithm> 
+    [--poisson] <Should Support model a Poisson Distribution>
+    [--not-opt]
 ```
-to run on a specific setting, or use 
-```bash
---bruteforce
-```
-to run every possible combination of $k$ and $\ell$ on this instance. And lastly, you can use
-```bash
---fraction <Number>
-```
-to run on every possible fraction-combination of $k$ and $\ell$. Namely, if `fraction` $= 2$, then the algorithms will run on $k = n_A, \frac{1}{2}n_A$ and $\ell = k, \frac{1}{2}k$.
 
 
 
 <a name="algorithms" ></a>
 ### Algorithms
 
-Input | Name | Adaptive? | Runtime | Value | Source
---- | --- | --- | --- | --- | ---
-AMP | AdaptiveMyopicPolicy | Yes | $\mathcal{O}(n_A \cdot (k + \log n))$ | $\frac{e - 1}{e}OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
-NAMP | NonAdaptiveMyopicPolicy | No | $\mathcal{O}(n_A\log n_A)$ | $\frac{e - 1}{2e}OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
-SCG | StochasticContinousGreedy | No | $\mathcal{O}(k^3n_A^5\log n_A\log n_A)$ | $(\frac{e - 1}{e} - \frac{1}{n_A})OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
-MDP | MarkovDevisionProcess | Yes | $\Omega((2 \cdot \|\mathcal{V}\|)^{n_A})$ | $OPT_A$ | [MDP](https://en.wikipedia.org/wiki/Markov_decision_process)
 
-Additionally, you can use OPT to get the optimal value of this instance. Furthermore to run `AMP` and `NAMP`, you can use `FAST`, to run `AMP`, `NAMP`, and `SCG`, you can use `POLY` and to run all algorithms, you can use `ALL`. Note that `OPT` is always included except when `--exclude-opt` is specified
+
+Goal | Input | Name | Runtime | Value | Source
+--- | --- | --- | --- | --- | ---
+MAX / SUM | OPT | OptimalOfflineAlgorithm | $\mathcal{O}(n_A \cdot \log n_A)$ | $OPT$ | -
+MAX / SUM | AMP | AdaptiveMyopicPolicy | $\mathcal{O}(n_A \cdot (k + \log n_A))$ | $\frac{e - 1}{e}OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
+MAX / SUM | NAMP | NonAdaptiveMyopicPolicy | $\mathcal{O}(n_A \cdot \log n_A)$ | $\frac{e - 1}{2e}OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
+COV | OPT | OptimalOfflineAlgorithm | $\mathcal{O}(\ell \cdot n_A \cdot n_B)$ | $\frac{e - 1}{e}OPT$ | -
+COV | AMP | AdaptiveMyopicPolicy | $\mathcal{O}(k^2 \cdot \ell \cdot n_A \cdot n_B)$ | $\frac{e - 1}{e}OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
+COV | NAMP | NonAdaptiveMyopicPolicy | $\mathcal{O}(k^2 \cdot \ell \cdot n_A \cdot n_B)$ | $\frac{e - 1}{2e}OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
+
+To run all algorithms on a specified goal, use `ALL` and use `--not-opt` if you do not want to run `OPT` - otherwise it is always run and logged. 
 
 ### Goal Functions
-At the moment, there are $3$ possible goal functions. $f_{max}, f_{sum}$ which both reduce to [Top-l-ProbeMax](https://arxiv.org/pdf/2007.13121.pdf) and $f_{cov}$ which reduces to [MaximumCoverage](https://en.wikipedia.org/wiki/Maximum_coverage_problem) but is not implemented yet.
+There are $3$ possible goal functions. $f_{max}, f_{sum}$ which both reduce to [Top-l-ProbeMax](https://arxiv.org/pdf/2007.13121.pdf) and $f_{cov}$ which reduces to a variation of [MaximumCoverage](https://en.wikipedia.org/wiki/Maximum_coverage_problem).
 
 For $f_{max}$ and $f_{sum}$, each $\mathit{Regulator }\,\, a \in A$ is assigned an independent value, namely the maximum or the sum of all its incident edges. After that, we have to choose $\ell \,\,\mathit{Regulators}$ to maximize the sum of their values. 
 
+For $f_{cov}$, each $\mathit{Position}$ $b \in B$ is assigned the value of the highest incident edge to a $\mathit{Regulator}$ $a \in S$ in the chosen probed subset $S \subseteq A$. We have to choose $\ell$ probed $\mathit{Regulators}$ to maximize the sum of all $\mathit{Position}$-values.
+
 ### Jobs
 The jobs folder contains all bash files to run the algorithms for comparison on the Goethe-HHLR cluster.
+
+### Scripts
+The scripts folder contains all script files. Note that [Python](https://www.python.org/) must be installed beforehand. The scripts are:
+* Data Generation using `createData.py`
+* Data Compression using `bprTimeCompression.py` or `bprValuesCompression` to compress logged results into small data that then can be plotted
+* Plotting Data using `timePlot.py` or `valuesPlot.py`
+
+Installing the necessary python packages can be done via
+```bash
+pip install -r scripts/requirements
+```

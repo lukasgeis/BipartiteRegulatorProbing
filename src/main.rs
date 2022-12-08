@@ -61,7 +61,13 @@ fn main() -> std::io::Result<()> {
         .create(true)
         .open(opt.log.as_ref().unwrap())
         .unwrap();
-    for _ in 0..opt.iterations {
+
+    let iterations: usize = match &opt.file {
+        Some(_) => 1,
+        None => opt.iterations,
+    };
+
+    for _ in 0..iterations {
         let mut bpr: BipartiteRegulatorProbing = match &opt.file {
             Some(path) => {
                 let file = File::open(path).expect("Could not find file!");
