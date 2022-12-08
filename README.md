@@ -29,7 +29,7 @@ python3 scripts/createData.py --number <Number of Graphs> \
 ```
 You can see an example file here: [EXAMPLE](EXAMPLE)
 
-Alternatively, you can create graph instances at runtim with prespecified parameters
+Alternatively, you can create graph instances at runtime with prespecified parameters
 
 ### Running the algorithms
 As there are multiple possibilities of choosing $k$ and $\ell$ for every graph with $n_A \mathit{Regulators}$, there are multiple ways to run algorithms all using the same main binary created.
@@ -43,7 +43,7 @@ target/release/bpr --file <Input Graph file> \
     --parameters <Number> \
     [--not-opt]
 ```
-Parameters is used to run on every possible fraction-combination of $k$ and $\ell$. Namely, if `parameters` $= 2$, then the algorithms will run on $k = n_A, \frac{1}{2}n_A$ and $\ell = k, \frac{1}{2}k$.
+`Parameters` is used to run on every possible fraction-combination of $k$ and $\ell$. Namely, if `parameters` $= 2$, then the algorithms will run on $k = n_A, \frac{1}{2}n_A$ and $\ell = k, \frac{1}{2}k$.
 
 If you wish to create graph instances at runtime, instead use
 ```bash
@@ -61,10 +61,8 @@ target/release/bpr --log <Path to log-file> \
 ```
 
 
-
 <a name="algorithms" ></a>
 ### Algorithms
-
 
 
 Goal | Input | Name | Runtime | Value | Source
@@ -86,7 +84,7 @@ For $f_{max}$ and $f_{sum}$, each $\mathit{Regulator }\,\, a \in A$ is assigned 
 For $f_{cov}$, each $\mathit{Position}$ $b \in B$ is assigned the value of the highest incident edge to a $\mathit{Regulator}$ $a \in S$ in the chosen probed subset $S \subseteq A$. We have to choose $\ell$ probed $\mathit{Regulators}$ to maximize the sum of all $\mathit{Position}$-values.
 
 ### Jobs
-The jobs folder contains all bash files to run the algorithms for comparison on the Goethe-HHLR cluster.
+The `jobs` folder contains all bash files to run the algorithms for comparison on the [Goethe-HHLR](https://csc.uni-frankfurt.de/wiki/doku.php?id=public:start) cluster.
 
 ### Scripts
 The scripts folder contains all script files. Note that [Python](https://www.python.org/) must be installed beforehand. The scripts are:
