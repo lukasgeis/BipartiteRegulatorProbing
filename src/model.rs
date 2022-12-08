@@ -1,9 +1,11 @@
+use std::io::{BufRead, Error, ErrorKind};
+
 use rand::Rng;
 
 use crate::{
     algorithms::Instance,
     distributions::{max_distributions, sum_distributions, DiscreteDistribution},
-    GoalFunction, ProbingAction, Reward, Setting, Solution, Time,
+    GoalFunction, Probability, Setting, Solution,
 };
 
 /// Main Model of BPR holding all necessary Information
@@ -24,8 +26,6 @@ pub struct BipartiteRegulatorProbing {
     ),
     /// Non-Adaptive-Algorithms
     non_adaptive_algorithms: Vec<Solution>,
-    /// Optimal-Adaptive-Algorithm
-    optimal_adaptive_table: Vec<(Setting, Vec<Vec<Option<(ProbingAction, Reward)>>>, Time)>,
     /// Name-Coding
     coding: String,
 }
@@ -49,13 +49,114 @@ impl BipartiteRegulatorProbing {
             edges: edges,
             probemax: (None, None),
             non_adaptive_algorithms: Vec::new(),
-            optimal_adaptive_table: Vec::new(),
             coding: rand::thread_rng()
                 .sample_iter(&rand::distributions::Alphanumeric)
                 .take(5)
                 .map(char::from)
                 .collect(),
         }
+    }
+
+    /// Reads input and returns the parsed instance
+    pub fn init<T: BufRead>(reader: T) -> Result<Self, Error> {
+        // Custom Error Messages
+        let error = |msg| Err(Error::new(ErrorKind::Other, msg));
+        // Read all lines and remove Comment-Lines (almost certainly not present)
+        let mut lines = reader.lines().filter_map(|x| -> Option<String> {
+            if let Ok(line) = x {
+                if !line.starts_with("%") {
+                    return Some(line);
+                }
+            }
+            None
+        });
+
+        // Parse Header
+        let (na, nb, vs) = {
+            if let Some(header) = lines.next() {
+                let fields: Vec<_> = header.split(" ").collect();
+                if fields.len() != 4 {
+                    return error("Expected exactly 4 header fields!");
+                }
+
+                let na: usize = match fields[1].parse() {
+                    Ok(na) => na,
+                    Err(_) => return error("Cannot parse number of Regulators!"),
+                };
+
+                let nb: usize = match fields[2].parse() {
+                    Ok(nb) => nb,
+                    Err(_) => return error("Cannot parse number of Positions!"),
+                };
+
+                let vs: usize = match fields[3].parse() {
+                    Ok(vs) => vs,
+                    Err(_) => return error("Cannot parse size of Support!"),
+                };
+
+                (na, nb, vs)
+            } else {
+                return error("Cannot parse Header!");
+            }
+        };
+
+        // Parse Distributions
+        let mut edges: Vec<Vec<DiscreteDistribution>> = Vec::with_capacity(na);
+        for (number, line) in lines.enumerate() {
+            if number % nb == 0 {
+                edges.push(Vec::with_capacity(nb));
+            }
+
+            let content: Vec<_> = line.split(" ").collect();
+            let (a, b) = {
+                let edge: Vec<_> = content[0].split("-").collect();
+                if edge.len() != 2 {
+                    return error("Expected exactly 2 edge nodes!");
+                }
+
+                let a: usize = match edge[0].parse() {
+                    Ok(a) => a,
+                    Err(_) => return error(format!("Cannot parse Regulator {}", edge[0]).as_str()),
+                };
+                let b: usize = match edge[1].parse() {
+                    Ok(b) => b,
+                    Err(_) => return error(format!("Cannot parse Position {}", edge[1]).as_str()),
+                };
+
+                (a, b)
+            };
+
+            if a - 1 != number / nb || b - 1 != number % nb {
+                return error(format!("Wrong order of edges at {}-{}", a, b).as_str());
+            }
+
+            let mut values: Vec<Probability> = Vec::with_capacity(vs);
+            for v in content[1].split(",") {
+                if let Ok(fv) = v.parse::<Probability>() {
+                    if fv < 0.0 || fv > 1.0 {
+                        return error(format!("Impossible probabilities at {}-{}", a, b).as_str());
+                    }
+
+                    values.push(fv);
+                }
+            }
+
+            edges[number / nb].push(DiscreteDistribution::from_list(&values));
+        }
+
+        Ok(Self {
+            na: na,
+            nb: nb,
+            vs: vs,
+            edges: edges,
+            probemax: (None, None),
+            non_adaptive_algorithms: Vec::new(),
+            coding: rand::thread_rng()
+                .sample_iter(&rand::distributions::Alphanumeric)
+                .take(5)
+                .map(char::from)
+                .collect(),
+        })
     }
 
     /// Get Number of Regulators
@@ -122,29 +223,6 @@ impl BipartiteRegulatorProbing {
     /// Add Non-Adaptive Algorithm
     pub fn add_non_adaptive_solution(&mut self, solution: Solution) {
         self.non_adaptive_algorithms.push(solution);
-    }
-
-    /// Get Optimal Adaptive Policy
-    pub fn get_optimal_adaptive_probemax_policy(
-        &self,
-        setting: Setting,
-    ) -> Option<(&Vec<Vec<Option<(ProbingAction, Reward)>>>, Time)> {
-        for entry in &self.optimal_adaptive_table {
-            if entry.0 == setting {
-                return Some((&entry.1, entry.2));
-            }
-        }
-        None
-    }
-
-    /// Add Optimal Adaptive Policy
-    pub fn add_optimal_adaptive_probemax_policy(
-        &mut self,
-        setting: Setting,
-        policy: Vec<Vec<Option<(ProbingAction, Reward)>>>,
-        time: Time,
-    ) {
-        self.optimal_adaptive_table.push((setting, policy, time));
     }
 
     /// Creates an Instance of this BPR model

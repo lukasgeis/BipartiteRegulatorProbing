@@ -2,7 +2,7 @@ use std::f64::consts::E;
 
 use rand::Rng;
 
-use crate::{is_close, Probability, Reward, factorial};
+use crate::{factorial, is_close, Probability, Reward};
 
 /// Structure representing a DiscreteDistribution
 #[derive(Debug, Clone, PartialEq)]
