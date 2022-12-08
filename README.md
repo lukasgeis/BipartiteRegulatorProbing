@@ -70,7 +70,7 @@ Goal | Input | Name | Runtime | Approximation Factor | Source
 MAX / SUM | OPT | OptimalOfflineAlgorithm | $\mathcal{O}(n_A \cdot \log n_A)$ | $OPT$ | -
 MAX / SUM | AMP | AdaptiveMyopicPolicy | $\mathcal{O}(n_A \cdot (k + \log n_A))$ | $\frac{e - 1}{e}OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
 MAX / SUM | NAMP | NonAdaptiveMyopicPolicy | $\mathcal{O}(n_A \cdot \log n_A)$ | $\frac{e - 1}{2e}OPT_A$ | [SMSM](https://arxiv.org/abs/0908.2788)
-COV | OPT | OptimalOfflineAlgorithm | $\mathcal{O}(\ell \cdot n_A \cdot n_B)$ | $\frac{e - 1}{e}OPT$ | -
+COV | OPT | OptimalOfflineAlgorithm | $\mathcal{O}(\ell \cdot n_A \cdot n_B)$ | $\frac{e - 1}{e}OPT$ | [MSM](https://www.cs.toronto.edu/~eidan/papers/submod-max.pdf)
 COV | AMP | AdaptiveMyopicPolicy | $\mathcal{O}(k^2 \cdot \ell \cdot n_A \cdot n_B)$ | - | [SMSM](https://arxiv.org/abs/0908.2788)
 COV | NAMP | NonAdaptiveMyopicPolicy | $\mathcal{O}(k^2 \cdot \ell \cdot n_A \cdot n_B)$ | - | [SMSM](https://arxiv.org/abs/0908.2788)
 
