@@ -79,7 +79,7 @@ To run all algorithms on a specified goal, use `ALL` and use `--not-opt` if you 
 ### Goal Functions
 There are $3$ possible goal functions. $f_{max}, f_{sum}$ which both reduce to [Top-l-ProbeMax](https://arxiv.org/pdf/2007.13121.pdf) and $f_{cov}$ which reduces to a variation of [MaximumCoverage](https://en.wikipedia.org/wiki/Maximum_coverage_problem).
 
-For $f_{max}$ and $f_{sum}$, each $\mathit{Regulator }\,\, a \in A$ is assigned an independent value, namely the maximum or the sum of all its incident edges. After that, we have to choose $\ell \,\,\mathit{Regulators}$ to maximize the sum of their values. 
+For $f_{max}$ and $f_{sum}$, each $\mathit{Regulator }$  $a \in A$ is assigned an independent value, namely the maximum or the sum of all its incident edges. After that, we have to choose $\ell$ $\mathit{Regulators}$ to maximize the sum of their values. 
 
 For $f_{cov}$, each $\mathit{Position}$ $b \in B$ is assigned the value of the highest incident edge to a $\mathit{Regulator}$ $a \in S$ in the chosen probed subset $S \subseteq A$. We have to choose $\ell$ probed $\mathit{Regulators}$ to maximize the sum of all $\mathit{Position}$-values.
 
