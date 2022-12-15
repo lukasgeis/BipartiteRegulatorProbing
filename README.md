@@ -89,8 +89,8 @@ The `jobs` folder contains all bash files to run the algorithms for comparison o
 ### Scripts
 The scripts folder contains all script files. Note that [Python](https://www.python.org/) must be installed beforehand. The scripts are:
 * Data Generation using `createData.py`
-* Data Compression using `bprTimeCompression.py` or `bprValuesCompression` to compress logged results into small data that then can be plotted
-* Plotting Data using `timePlot.py` or `valuesPlot.py`
+* Data Compression using `bprTimeCompression.py`, `bprParametersCompression.py` or `bprValuesCompression` to compress logged results into small data that then can be plotted
+* Plotting Data using `timePlot.py`, `parametersPlot.py` or `valuesPlot.py`
 
 Installing the necessary python packages can be done via
 ```bash
