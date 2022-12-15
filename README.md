@@ -43,7 +43,7 @@ target/release/bpr --file <Input Graph file> \
     --parameters <Number> \
     [--not-opt]
 ```
-`Parameters` is used to run on every possible fraction-combination of $k$ and $\ell$. Namely, if `parameters` $= 2$, then the algorithms will run on $k = \frac{1}{2}n_A$ and $\ell = k, \frac{1}{2}k$.
+`Parameters` is used to run on every possible fraction-combination of $k$ and $\ell$. Namely, if `parameters` $= 2$, then the algorithms will run on $k = \frac{1}{3}n_A, \frac{2}{3}n_A$ and $\ell = \frac{1}{3}k, \frac{2}{3}k, k$.
 
 If you wish to create graph instances at runtime, instead use
 ```bash
