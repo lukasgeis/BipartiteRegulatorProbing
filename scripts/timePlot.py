@@ -24,6 +24,7 @@ inverted_array = [
     ] for key in keys
 ]
 
+
 values = np.array(inverted_array)
 
 data = pd.DataFrame(values, keys, columns = ["OPT", "AMP", "NAMP"])
