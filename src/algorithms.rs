@@ -414,50 +414,13 @@ impl<'a> Instance<'a> {
                                 .into_iter()
                                 .filter(|i| !probed_subset.contains(i))
                                 .map(|a| -> (usize, f64) {
-                                    // Run Greedy Algorithm to evaluate Expected Value
-                                    let mut temp_subset: Vec<usize> = probed_subset.clone();
-                                    temp_subset.push(a);
-                                    let mut test_subset: Vec<usize> = Vec::with_capacity(l);
-                                    let mut test_values: Vec<f64> = vec![0.0; self.bpr.get_nb()];
-                                    for _ in 0..l {
-                                        let test_argmax: usize = temp_subset
-                                            .iter()
-                                            .filter(|i| !test_subset.contains(i))
-                                            .map(|test_a| -> (usize, f64) {
-                                                let mut test_reward: f64 = 0.0;
-                                                for b in 0..self.bpr.get_nb() {
-                                                    if self
-                                                        .bpr
-                                                        .get_edge(*test_a, b)
-                                                        .expected_value()
-                                                        > test_values[b]
-                                                    {
-                                                        test_reward += self
-                                                            .bpr
-                                                            .get_edge(*test_a, b)
-                                                            .expected_value()
-                                                            - test_values[b];
-                                                    }
-                                                }
-                                                (*test_a, test_reward)
-                                            })
-                                            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-                                            .unwrap()
-                                            .0;
-                                        for b in 0..self.bpr.get_nb() {
-                                            if self.bpr.get_edge(test_argmax, b).expected_value()
-                                                > test_values[b]
-                                            {
-                                                test_values[b] = self
-                                                    .bpr
-                                                    .get_edge(test_argmax, b)
-                                                    .expected_value();
-                                            }
-                                        }
-                                        test_subset.push(test_argmax);
-                                    }
-
-                                    (a, test_values.into_iter().sum())
+                                    (
+                                        a,
+                                        (0..self.bpr.get_nb())
+                                            .into_iter()
+                                            .map(|b| self.bpr.get_edge(a, b).expected_value())
+                                            .sum(),
+                                    )
                                 })
                                 .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
                                 .unwrap()

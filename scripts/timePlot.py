@@ -17,10 +17,15 @@ header = os.path.basename(args.input).split("_")
 with open(args.input, "rb") as datafile:
     raw_data = pickle.load(datafile)
 
-keys = sorted(raw_data.keys())
+filtered_data = {}
+for key in raw_data.keys():
+    if raw_data[key][0][1] > 0 and raw_data[key][1][1] > 0 and raw_data[key][2][1] > 0:
+        filtered_data[key] = raw_data[key]
+
+keys = sorted(filtered_data.keys())
 inverted_array = [
     [
-        raw_data[key][i][0] / raw_data[key][i][1] for i in range(3)
+        filtered_data[key][i][0] / max(1,filtered_data[key][i][1]) for i in range(3)
     ] for key in keys
 ]
 
