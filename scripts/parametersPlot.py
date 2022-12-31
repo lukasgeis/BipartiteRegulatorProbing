@@ -43,7 +43,7 @@ data = [
     ] for k in range(3)
 ]
 
-fig, ax = plt.subplots(3, 4, sharex = True, sharey = "all")
+fig, ax = plt.subplots(3, 4, sharex = True, sharey = True)
 
 for k in range(3):
     for l in range(4):
@@ -62,10 +62,18 @@ ax[0][0].set_ylabel(r'$k = \frac{1}{4}n_A$', fontsize = 17)
 ax[1][0].set_ylabel(r'$k = \frac{2}{4}n_A$', fontsize = 17)
 ax[2][0].set_ylabel(r'$k = \frac{3}{4}n_A$', fontsize = 17)
 
-if "POISSON" in header:
-    fig.suptitle(str(header[1]) + r' : $n_A = 16 \cdot z,\, n_B = 400 \cdot z,\, |\mathcal{V}| = 10$', fontsize = 23, y = 0.95)
+def goal_function(fun: str) -> str:
+    if "MAX" in fun:
+        return r'$f_{max}$'
+    elif "SUM" in fun:
+        return r'$f_{sum}$'
+    else:
+        return r'$f_{cov}$'
+
+if header[2][0] == "P":
+    fig.suptitle(goal_function(header[1]) + r' : $n_A = 16 \cdot z,\, n_B = 400 \cdot z,\, |\mathcal{V}| = 10$', fontsize = 23, y = 0.95)
 else:
-    fig.suptitle(str(header[1]) + r' : $n_A = n_B = |\mathcal{V}| = 16 \cdot z$', fontsize = 23, y = 0.95)
+    fig.suptitle(goal_function(header[1]) + r' : $n_A = n_B = |\mathcal{V}| = 16 \cdot z$', fontsize = 23, y = 0.95)
 
 fig.text(0.5, 0.04, r'$z$', ha = "center", fontsize = 20)
 fig.text(0.04, 0.5, r'$val_{ALG} / val_{OPT}$', va = "center", rotation = "vertical", fontsize = 20)

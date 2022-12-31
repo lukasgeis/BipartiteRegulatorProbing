@@ -36,9 +36,17 @@ data = pd.DataFrame(values, keys, columns = ["OPT", "AMP", "NAMP"])
 
 plot = sns.lineplot(data = data, palette = "tab10", linewidth = 2.5)
 
+def goal_function(fun: str) -> str:
+    if "MAX" in fun:
+        return r'$f_{max}$'
+    elif "SUM" in fun:
+        return r'$f_{sum}$'
+    else:
+        return r'$f_{cov}$'
+
 plt.xscale("log")
 plt.yscale("log")
-plt.title(str(header[1]) + " : Average Running Time", fontsize = 20)
+plt.title(goal_function(header[1]) + " : Average Running Time", fontsize = 20)
 plt.xlabel(r'$|A \times B| = n_A \cdot n_B$', fontsize = 20)
 plt.ylabel(r'time in $s$', fontsize = 20)
 plt.setp(plot.get_legend().get_texts(), fontsize = 17)
