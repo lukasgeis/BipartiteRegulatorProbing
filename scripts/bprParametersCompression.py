@@ -4,7 +4,7 @@ import argparse
 
 def main(inputDir: str, output: str):
     X = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
-    Y = [[[[0.0 for i in range(len(X))] for j in range(2)] for k in range(4)] for l in range(3)]
+    Y = [[[[[0.0, 0.0] for i in range(len(X))] for j in range(2)] for k in range(4)] for l in range(3)]
     Z = [0 for i in range(len(X))]
 
     for file in os.listdir(inputDir):
@@ -23,7 +23,7 @@ def main(inputDir: str, output: str):
             break
         idx = X.index(header // 16)
 
-        totWorst = [[[1.0, 1.0] for i in range(4)] for j in range(3)]
+        totValues = [[[[1.0, 1.0], [[0.0, 0], [0.0, 0]]] for i in range(4)] for j in range(3)]
         for bpr in data:
             for instance in data[bpr]:
                 opt = {}  
@@ -34,18 +34,24 @@ def main(inputDir: str, output: str):
                         k = (algo[1] // (header // 4)) - 1
                         l = (algo[2] // (algo[1] // 4)) - 1
                         ratio = algo[3] / opt[algo[2]]
-                        if ratio < totWorst[k][l][0]:
-                            totWorst[k][l][0] = ratio
+                        totValues[k][l][1][0] += ratio
+                        totValues[k][l][1][1] += 1
+                        if ratio < totValues[k][l][0][0]:
+                            totValues[k][l][0][0] = ratio
                     else:
                         k = (algo[1] // (header // 4)) - 1
                         l = (algo[2] // (algo[1] // 4)) - 1
                         ratio = algo[3] / opt[algo[2]]
-                        if ratio < totWorst[k][l][1]:
-                            totWorst[k][l][1] = ratio
+                        totValues[k][l][2][0] += ratio
+                        totValues[k][l][2][1] += 1
+                        if ratio < totValues[k][l][0][1]:
+                            totValues[k][l][0][1] = ratio
         for k in range(3):
             for l in range(4):
-                Y[k][l][0][idx] = totWorst[k][l][0]
-                Y[k][l][1][idx] = totWorst[k][l][1]
+                Y[k][l][0][idx][0] = totValues[k][l][0][0]
+                Y[k][l][1][idx][0] = totValues[k][l][0][1]
+                Y[k][l][0][idx][1] = totValues[k][l][1][0] / max(1, totValues[k][l][1][1])
+                Y[k][l][1][idx][1] = totValues[k][l][2][0] / max(1, totValues[k][l][2][1])
         Z[idx] = len(data)
     
     fullData = {
