@@ -9,7 +9,7 @@ def main(inputDir: str, output: str):
 
     for file in os.listdir(inputDir):
         header = None
-        if int(file[file.index("_"):]) > 20:
+        if int(file[(file.index("_") + 1):]) > 20:
             continue
         data = {}
         for line in open(os.path.join(inputDir, file), "r").readlines():
