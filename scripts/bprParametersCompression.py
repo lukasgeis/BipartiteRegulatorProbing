@@ -9,6 +9,8 @@ def main(inputDir: str, output: str):
 
     for file in os.listdir(inputDir):
         header = None
+        if int(file[file.index("_"):]) > 20:
+            continue
         data = {}
         for line in open(os.path.join(inputDir, file), "r").readlines():
             content = [x.split(": ")[1] for x in line.split(" -- ")]
