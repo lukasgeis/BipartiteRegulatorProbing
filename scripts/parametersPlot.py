@@ -21,8 +21,10 @@ inverted_ararys = [
     [
         [
             [
-                raw_data["y"][k][l][0][x],
-                raw_data["y"][k][l][0][x],
+                raw_data["y"][k][l][0][x][1],
+                raw_data["y"][k][l][0][x][0],
+                raw_data["y"][k][l][1][x][1],
+                raw_data["y"][k][l][1][x][0],
                 1.0
             ] for x in range(len(raw_data["x"]))
         ] for l in range(4)
@@ -37,7 +39,7 @@ values = [
 
 data = [
     [
-        pd.DataFrame(values[k][l], raw_data["x"], columns = ["AMP", "NAMP", "OPT"]) for l in range(4)
+        pd.DataFrame(values[k][l], raw_data["x"], columns = ["AMP - Average", "AMP - Worst", "NAMP - Average", "NAMP - Worst", "OPT"]) for l in range(4)
     ] for k in range(3)
 ]
 

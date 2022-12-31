@@ -23,7 +23,7 @@ def main(inputDir: str, output: str):
             break
         idx = X.index(header // 16)
 
-        totValues = [[[[1.0, 1.0], [[0.0, 0], [0.0, 0]]] for i in range(4)] for j in range(3)]
+        totValues = [[[[1.0, 1.0], [0.0, 0], [0.0, 0]] for i in range(4)] for j in range(3)]
         for bpr in data:
             for instance in data[bpr]:
                 opt = {}  
