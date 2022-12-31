@@ -14,7 +14,7 @@ def main(inputDir: str, output: str):
             content = [x.split(": ")[1] for x in line.split(" -- ")]
             if header is None:
                 header = int(content[1])
-            if (header[0] // 16) not in X:
+            if (header // 16) not in X:
                 break 
             if content[5] == "AMP":
                 idx = 0
