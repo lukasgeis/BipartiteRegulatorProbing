@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=bprFast
+#SBATCH --job-name=bprGeneral
 #SBATCH --partition=general1
 #SBATCH --nodes=1
 #SBATCH --ntasks=60
@@ -17,5 +17,3 @@ do
     target/release/bpr --log "${OUTPUTDIR}/sum/OUT_${NUM}" --na $((16 * $NUM)) --nb $((16 * $NUM)) --vs $((16 * $NUM)) --iterations 500 --instances 20 --goal SUM --algorithm ALL --parameters 4 &
     target/release/bpr --log "${OUTPUTDIR}/cov/OUT_${NUM}" --na $((16 * $NUM)) --nb $((16 * $NUM)) --vs $((16 * $NUM)) --iterations 500 --instances 20 --goal COV --algorithm ALL --parameters 4 &
 done
-
-wait
