@@ -8,6 +8,8 @@ use crate::{
     GoalFunction, Probability, Setting, Solution,
 };
 
+pub type ProbeMax = Vec<DiscreteDistribution>;
+
 /// Main Model of BPR holding all necessary Information
 #[derive(Debug)]
 pub struct BipartiteRegulatorProbing {
@@ -20,10 +22,7 @@ pub struct BipartiteRegulatorProbing {
     /// Distributions of Edges
     edges: Vec<Vec<DiscreteDistribution>>,
     /// ProbeMax-Reductions
-    probemax: (
-        Option<Vec<DiscreteDistribution>>,
-        Option<Vec<DiscreteDistribution>>,
-    ),
+    probemax: (Option<ProbeMax>, Option<ProbeMax>),
     /// Non-Adaptive-Algorithms
     non_adaptive_algorithms: Vec<Solution>,
     /// Name-Coding
@@ -190,7 +189,7 @@ impl BipartiteRegulatorProbing {
     }
 
     /// Get the ProbeMax-Distributions for a certain goal or compute it if not computed already
-    pub fn get_probemax(&mut self, goal: &GoalFunction) -> &Vec<DiscreteDistribution> {
+    pub fn get_probemax(&mut self, goal: &GoalFunction) -> &ProbeMax {
         match goal {
             GoalFunction::COV => panic!("There is no ProbeMax-Variant of Coverage!"),
             GoalFunction::MAX => {
