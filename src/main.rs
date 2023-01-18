@@ -54,7 +54,10 @@ struct Opt {
 }
 
 fn main() -> std::io::Result<()> {
+    // Parse Args
     let opt = Opt::from_args();
+    
+    // Create / Open Log file
     let mut outfile = OpenOptions::new()
         .write(true)
         .append(true)
@@ -62,12 +65,15 @@ fn main() -> std::io::Result<()> {
         .open(opt.log.as_ref().unwrap())
         .unwrap();
 
+    // Get Iterations
     let iterations: usize = match &opt.file {
         Some(_) => 1,
         None => opt.iterations,
     };
 
+    // Run Iterations
     for _ in 0..iterations {
+        // Parse Input File / Create new Instance
         let mut bpr: BipartiteRegulatorProbing = match &opt.file {
             Some(path) => {
                 let file = File::open(path).expect("Could not find file!");
@@ -77,8 +83,10 @@ fn main() -> std::io::Result<()> {
             None => BipartiteRegulatorProbing::new(opt.na, opt.nb, opt.vs, opt.poisson),
         };
 
+        // Get Number of Regulators
         let na: usize = bpr.get_na();
 
+        // Get Outputstring of Instance
         let bpr_output: String = bpr_to_string(&bpr);
         for _ in 0..opt.instances {
             let mut instance: Instance = bpr.create_instance();
