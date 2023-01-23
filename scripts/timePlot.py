@@ -38,7 +38,7 @@ inverted_array = [
 
 values = np.array(inverted_array)
 
-data = pd.DataFrame(values, keys, columns = ["OPT - General", "OPT - Poisson", "AMP - General", "AMP - Poisson", "NAMP - General", "NAMP - Poisson"])
+data = pd.DataFrame(values, keys, columns = ["OPT - Uniform", "OPT - Network", "AMP - Uniform", "AMP - Network", "NAMP - Uniform", "NAMP - Network"])
 
 plot = sns.lineplot(data = data, palette = "Paired", dashes = False, linewidth = 2.5)
 
