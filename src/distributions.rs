@@ -86,7 +86,7 @@ impl DiscreteDistribution {
 
     /// Creates a new Distribution from a given list of proabilities
     pub fn from_list(list: &Vec<Probability>) -> Self {
-        if !is_close(list.into_iter().sum::<Probability>(), 1.0, None)
+        if !is_close(list.into_iter().sum::<Probability>(), 1.0)
             || !list.into_iter().all(|p| 0.0 <= *p && *p <= 1.0)
         {
             return Self {

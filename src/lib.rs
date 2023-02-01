@@ -69,8 +69,8 @@ impl FromStr for Algorithm {
 }
 
 /// Are two f64 close enough to be considered the same
-pub fn is_close(a: f64, b: f64, tol: Option<f64>) -> bool {
-    (b - a).abs() < tol.unwrap_or(1e-09)
+pub fn is_close(a: f64, b: f64) -> bool {
+    (b - a).abs() < 1e-09
 }
 
 /// Get Factorial of Number
