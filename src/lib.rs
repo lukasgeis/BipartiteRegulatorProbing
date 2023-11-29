@@ -1,21 +1,10 @@
-extern crate core;
+#![feature(binary_heap_into_iter_sorted)]
 
 use std::str::FromStr;
-
-use model::BipartiteRegulatorProbing;
 
 pub mod algorithms;
 pub mod distributions;
 pub mod model;
-
-/// Custom Types
-pub type Probability = f64;
-pub type Reward = f64;
-pub type Time = f64;
-
-/// Settings/Solutions
-pub type Setting = (GoalFunction, Algorithm, usize, usize);
-pub type Solution = (Setting, Time, Vec<usize>, usize);
 
 /// Possible GoalFunctions
 #[derive(Debug, Clone, PartialEq)]
@@ -73,32 +62,18 @@ pub fn is_close(a: f64, b: f64) -> bool {
     (b - a).abs() < 1e-09
 }
 
-/// Get Factorial of Number
-pub fn factorial(n: usize) -> usize {
-    (1..=n).product()
+
+pub fn compute_opt_l_values(n: usize) -> [usize; 8] {
+    let n16 = n / 16;
+    [n16, n16 * 2, n16 * 3, n16 * 4, n16 * 6, n16 * 8, n16 * 9, n16 * 12]
 }
 
-/// Convert a BPR to a suitable String to print
-pub fn bpr_to_string(bpr: &BipartiteRegulatorProbing) -> String {
-    format!(
-        "Name: {:?} -- na: {} -- nb: {} -- vs: {}",
-        bpr.get_coding(),
-        bpr.get_na(),
-        bpr.get_nb(),
-        bpr.get_vs()
-    )
-}
-
-/// Convert a Solution to a suitable String to print
-pub fn solution_to_string(solution: &Solution) -> String {
-    format!(
-        "Goal: {:?} -- Algorithm: {:?} -- k: {} -- l: {} -- Time: {} -- Subset: {:?} -- Value: {}",
-        solution.0 .0,
-        solution.0 .1,
-        solution.0 .2,
-        solution.0 .3,
-        solution.1,
-        solution.2,
-        solution.3
-    )
+pub fn compute_k_l_pairs(n: usize) -> [(usize, usize); 12] {
+    let n4 = n / 4;
+    let n16 = n / 16;
+    [
+        (n4, n16), (n4, n16 * 2), (n4, n16 * 3), (n4, n4),
+        (n4 * 2, n16 * 2), (n4 * 2, n4), (n4 * 2, n16 * 6), (n4 * 2, n4 * 2),
+        (n4 * 3, n16 * 3), (n4 * 3, n16 * 6), (n4 * 3, n16 * 9), (n4 * 3, n4 * 3)
+    ]
 }

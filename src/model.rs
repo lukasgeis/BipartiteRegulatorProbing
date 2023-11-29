@@ -1,231 +1,434 @@
-use std::io::{BufRead, Error, ErrorKind};
+use std::time::Instant;
 
 use rand::Rng;
+use ez_bitset::bitset::*;
 
-use crate::{
-    algorithms::Instance,
-    distributions::{max_distributions, sum_distributions, DiscreteDistribution},
-    GoalFunction, Probability, Setting, Solution,
-};
+use crate::distributions::*;
 
-pub type ProbeMax = Vec<DiscreteDistribution>;
-
-/// Main Model of BPR holding all necessary Information
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BipartiteRegulatorProbing {
-    /// Number of Regulators
+    // Number of Regulators
     na: usize,
-    /// Number of Positions
+    // Number of Positions
     nb: usize,
-    /// Size of Support
+    // Size of Support
     vs: usize,
-    /// Distributions of Edges
-    edges: Vec<Vec<DiscreteDistribution>>,
-    /// ProbeMax-Reductions
-    probemax: (Option<ProbeMax>, Option<ProbeMax>),
-    /// Non-Adaptive-Algorithms
-    non_adaptive_algorithms: Vec<Solution>,
-    /// Name-Coding
-    coding: String,
+    // Distributions of Edges
+    edges: Vec<Vec<WeightedDistribution>>,
+    // Optional Non-Adaptive COV Policies for given k and l
+    non_adaptive_cov_policies: Vec<(usize, usize, Vec<usize>, f64)>,
 }
 
 impl BipartiteRegulatorProbing {
-    /// Creates a new BPR Model
-    pub fn new(na: usize, nb: usize, vs: usize, poisson: bool) -> Self {
-        let mut edges: Vec<Vec<DiscreteDistribution>> = Vec::with_capacity(na);
-        for _ in 0..na {
-            let mut regulator: Vec<DiscreteDistribution> = Vec::with_capacity(nb);
-            for _ in 0..nb {
-                regulator.push(DiscreteDistribution::new(vs, poisson));
-            }
-            edges.push(regulator);
-        }
+    pub fn create_random<R: Rng>(
+        rng: &mut R,
+        na: usize,
+        nb: usize,
+        vs: usize,
+        poisson: bool,
+    ) -> Self {
+        let edges: Vec<Vec<WeightedDistribution>> = (0..na)
+            .map(|_| {
+                (0..nb)
+                    .map(|_| {
+                        if vs <= 1 {
+                            return WeightedDistribution::new(&[1.0]);
+                        }
+
+                        if poisson {
+                            WeightedDistribution::new(&create_poisson_weights(rng, vs))
+                        } else {
+                            WeightedDistribution::new(&create_random_weights(rng, vs))
+                        }
+                    })
+                    .collect()
+            })
+            .collect();
 
         Self {
-            na: na,
-            nb: nb,
-            vs: vs,
-            edges: edges,
-            probemax: (None, None),
-            non_adaptive_algorithms: Vec::new(),
-            coding: rand::thread_rng()
-                .sample_iter(&rand::distributions::Alphanumeric)
-                .take(5)
-                .map(char::from)
-                .collect(),
+            na,
+            nb,
+            vs,
+            edges,
+            non_adaptive_cov_policies: Vec::new(),
         }
-    }
-
-    /// Reads input and returns the parsed instance
-    pub fn init<T: BufRead>(reader: T) -> Result<Self, Error> {
-        // Custom Error Messages
-        let error = |msg| Err(Error::new(ErrorKind::Other, msg));
-        // Read all lines and remove Comment-Lines (almost certainly not present)
-        let mut lines = reader.lines().filter_map(|x| -> Option<String> {
-            if let Ok(line) = x {
-                if !line.starts_with("%") {
-                    return Some(line);
-                }
-            }
-            None
-        });
-
-        // Parse Header
-        let (na, nb, vs) = {
-            if let Some(header) = lines.next() {
-                let fields: Vec<_> = header.split(" ").collect();
-                if fields.len() != 4 {
-                    return error("Expected exactly 4 header fields!");
-                }
-
-                let na: usize = match fields[1].parse() {
-                    Ok(na) => na,
-                    Err(_) => return error("Cannot parse number of Regulators!"),
-                };
-
-                let nb: usize = match fields[2].parse() {
-                    Ok(nb) => nb,
-                    Err(_) => return error("Cannot parse number of Positions!"),
-                };
-
-                let vs: usize = match fields[3].parse() {
-                    Ok(vs) => vs,
-                    Err(_) => return error("Cannot parse size of Support!"),
-                };
-
-                (na, nb, vs)
-            } else {
-                return error("Cannot parse Header!");
-            }
-        };
-
-        // Parse Distributions
-        let mut edges: Vec<Vec<DiscreteDistribution>> = Vec::with_capacity(na);
-        for (number, line) in lines.enumerate() {
-            if number % nb == 0 {
-                edges.push(Vec::with_capacity(nb));
-            }
-
-            let content: Vec<_> = line.split(" ").collect();
-            let (a, b) = {
-                let edge: Vec<_> = content[0].split("-").collect();
-                if edge.len() != 2 {
-                    return error("Expected exactly 2 edge nodes!");
-                }
-
-                let a: usize = match edge[0].parse() {
-                    Ok(a) => a,
-                    Err(_) => return error(format!("Cannot parse Regulator {}", edge[0]).as_str()),
-                };
-                let b: usize = match edge[1].parse() {
-                    Ok(b) => b,
-                    Err(_) => return error(format!("Cannot parse Position {}", edge[1]).as_str()),
-                };
-
-                (a, b)
-            };
-
-            if a - 1 != number / nb || b - 1 != number % nb {
-                return error(format!("Wrong order of edges at {}-{}", a, b).as_str());
-            }
-
-            let mut values: Vec<Probability> = Vec::with_capacity(vs);
-            for v in content[1].split(",") {
-                if let Ok(fv) = v.parse::<Probability>() {
-                    if fv < 0.0 || fv > 1.0 {
-                        return error(format!("Impossible probabilities at {}-{}", a, b).as_str());
-                    }
-
-                    values.push(fv);
-                }
-            }
-
-            edges[number / nb].push(DiscreteDistribution::from_list(&values));
-        }
-
-        Ok(Self {
-            na: na,
-            nb: nb,
-            vs: vs,
-            edges: edges,
-            probemax: (None, None),
-            non_adaptive_algorithms: Vec::new(),
-            coding: rand::thread_rng()
-                .sample_iter(&rand::distributions::Alphanumeric)
-                .take(5)
-                .map(char::from)
-                .collect(),
-        })
     }
 
     /// Get Number of Regulators
+    #[inline]
     pub fn get_na(&self) -> usize {
         self.na
     }
 
     /// Get Number of Positions
+    #[inline]
     pub fn get_nb(&self) -> usize {
         self.nb
     }
 
     /// Get Size of Support
+    #[inline]
     pub fn get_vs(&self) -> usize {
         self.vs
     }
 
-    /// Get Coding of BPR
-    pub fn get_coding(&self) -> &String {
-        &self.coding
-    }
-
     /// Get the Distributions of all incident edges of Regulator a
-    pub fn get_regulator(&self, a: usize) -> &Vec<DiscreteDistribution> {
+    #[inline]
+    pub fn get_regulator(&self, a: usize) -> &Vec<WeightedDistribution> {
         &self.edges[a]
     }
 
     /// Get the Distribution of edge (a,b)
-    pub fn get_edge(&self, a: usize, b: usize) -> &DiscreteDistribution {
+    #[inline]
+    pub fn get_edge(&self, a: usize, b: usize) -> &WeightedDistribution {
         &self.edges[a][b]
     }
 
-    /// Get the ProbeMax-Distributions for a certain goal or compute it if not computed already
-    pub fn get_probemax(&mut self, goal: &GoalFunction) -> &ProbeMax {
-        match goal {
-            GoalFunction::COV => panic!("There is no ProbeMax-Variant of Coverage!"),
-            GoalFunction::MAX => {
-                if self.probemax.0.is_none() {
-                    self.probemax.0 =
-                        Some(self.edges.iter().map(|a| max_distributions(a)).collect());
-                }
-                return self.probemax.0.as_ref().unwrap();
-            }
-            GoalFunction::SUM => {
-                if self.probemax.1.is_none() {
-                    self.probemax.1 =
-                        Some(self.edges.iter().map(|a| sum_distributions(a)).collect());
-                }
-                return self.probemax.1.as_ref().unwrap();
-            }
+    /// Is there already a policy for this (k,l) pair
+    #[inline]
+    pub fn has_policy(&self, k: usize, l: usize) -> bool {
+        self.non_adaptive_cov_policies
+            .iter()
+            .find(|(a, b, _, _)| *a == k && *b == l)
+            .is_some()
+    }
+
+    /// Get the policy for a specific (k,l) pair
+    #[inline]
+    pub fn get_policy(&self, k: usize, l: usize) -> Option<&Vec<usize>> {
+        self.non_adaptive_cov_policies
+            .iter()
+            .find(|(a, b, _, _)| *a == k && *b == l)
+            .map(|(_, _, p, _)| p)
+    }
+
+    /// Get the policy time for a specific (k,l) pair
+    #[inline]
+    pub fn get_policy_time(&self, k: usize, l: usize) -> Option<f64> {
+        self.non_adaptive_cov_policies
+            .iter()
+            .find(|(a, b, _, _)| *a == k && *b == l)
+            .map(|(_, _, _, t)| *t)
+    }
+
+    /// Get the first l probes from any policy with at least l choosable boxes.
+    /// If no such policy exists, take a policy with high enough l and take its first l probes.
+    #[inline]
+    pub fn get_l_policy(&self, l: usize) -> (Vec<usize>, f64) {
+        if self.non_adaptive_cov_policies.len() == 0 {
+            return (Vec::new(), 0.0);
+        }
+
+        if let Some((_, _, policy, time)) = self
+            .non_adaptive_cov_policies
+            .iter()
+            .find(|(_, b, _, _)| *b >= l)
+        {
+            (policy.iter().copied().take(l).collect(), *time)
+        } else {
+            let (_, b, policy, time) = self
+                .non_adaptive_cov_policies
+                .iter()
+                .max_by(|(_, b1, _, _), (_, b2, _, _)| b1.cmp(b2))
+                .unwrap();
+            (policy.iter().copied().take(*b).collect(), *time)
         }
     }
 
-    /// Get Non-Adaptive Algorithm if found
-    pub fn get_algorithm(&self, setting: Setting) -> Option<&Solution> {
-        for algo in &self.non_adaptive_algorithms {
-            if algo.0 == setting {
-                return Some(&algo);
-            }
+    /// Add a policy for a (k,l) pair
+    #[inline]
+    pub fn add_policy(&mut self, k: usize, l: usize, policy: Vec<usize>, time: f64) {
+        assert!(policy.len() == k);
+        self.non_adaptive_cov_policies.push((k, l, policy, time));
+    }
+
+    /// Create an Instance
+    #[inline]
+    pub fn create_instance<R: Rng>(&self, rng: &mut R) -> Instance {
+        Instance::new(rng, self)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Instance<'a> {
+    bpr: &'a BipartiteRegulatorProbing,
+    realizations: Vec<Vec<usize>>,
+    greedy_cov_values: Vec<usize>,
+    opt_time: f64,
+}
+
+impl<'a> Instance<'a> {
+    /// Create an Instance from a BPR model and computes the vector of a GREEDY algorithm for Offline-Cov
+    #[inline]
+    pub fn new<R: Rng>(rng: &mut R, bpr: &'a BipartiteRegulatorProbing) -> Self {
+        let realizations: Vec<Vec<usize>> = (0..bpr.get_na())
+            .map(|a| {
+                (0..bpr.get_nb())
+                    .map(|b| bpr.get_edge(a, b).sample_index(rng))
+                    .collect()
+            })
+            .collect();
+
+        let timer = Instant::now();
+
+        let mut current_values: Vec<usize> = vec![0; bpr.get_nb()];
+        let mut greedy_cov_values: Vec<usize> = Vec::with_capacity(bpr.get_na() + 1);
+        let mut chosen_regulators = BitSet::new_all_set(bpr.get_na());
+
+        greedy_cov_values.push(0);
+
+        for _ in 0..bpr.get_na() {
+            let (inc, argmax): (usize, usize) = chosen_regulators.iter().map(|a| -> (usize, usize) {
+                ((0..bpr.get_nb()).filter_map(|b| {
+                    if realizations[a][b] > current_values[b] {
+                        Some(realizations[a][b] - current_values[b])
+                    } else {
+                        None
+                    }
+                }).sum(), a)
+            }).max().unwrap();
+
+            greedy_cov_values.push(*greedy_cov_values.last().unwrap() + inc);
+            chosen_regulators.unset_bit(argmax);
+            (0..bpr.get_nb()).for_each(|b| {
+                if realizations[argmax][b] > current_values[b] {
+                    current_values[b] = realizations[argmax][b];
+                }
+            })
         }
-        None
+
+        Self { bpr, realizations, greedy_cov_values, opt_time: timer.elapsed().as_secs_f64() }
     }
 
-    /// Add Non-Adaptive Algorithm
-    pub fn add_non_adaptive_solution(&mut self, solution: Solution) {
-        self.non_adaptive_algorithms.push(solution);
+    /// Get the BPR-model
+    #[inline]
+    pub fn get_model(&self) -> &BipartiteRegulatorProbing {
+        &self.bpr
     }
 
-    /// Creates an Instance of this BPR model
-    pub fn create_instance(&mut self) -> Instance {
-        Instance::new(self)
+    /// Get an Edge-Realization
+    #[inline]
+    pub fn get_realization(&self, a: usize, b: usize) -> usize {
+        self.realizations[a][b]
+    }
+
+    #[inline]
+    pub fn get_opt_cov_value(&self, l: usize) -> usize {
+        self.greedy_cov_values[l]
+    }
+
+    #[inline]
+    pub fn get_opt_cov_time(&self) -> f64 {
+        self.opt_time
+    }
+
+    #[inline]
+    pub fn eval_policy(&self, policy: &[usize], l: usize) -> usize {
+        if policy.len() == l {
+            return (0..self.bpr.get_nb()).map(|b| {
+                policy.iter().map(|a| self.realizations[*a][b]).max().unwrap_or(0)
+            }).sum();
+        }
+
+        let mut current_values: Vec<usize> = vec![0; self.bpr.get_nb()];
+        let mut greedy_value = 0usize;
+        let mut chosen_regulators = BitSet::new_all_set(policy.len());
+
+        for _ in 0..l {
+            let (inc, argmax): (usize, usize) = chosen_regulators.iter().map(|a| -> (usize, usize) {
+                ((0..self.bpr.get_nb()).filter_map(|b| {
+                    if self.realizations[a][b] > current_values[b] {
+                        Some(self.realizations[a][b] - current_values[b])
+                    } else {
+                        None
+                    }
+                }).sum(), a)
+            }).max().unwrap();
+
+            greedy_value += inc;
+            chosen_regulators.unset_bit(argmax);
+            (0..self.bpr.get_nb()).for_each(|b| {
+                if self.realizations[argmax][b] > current_values[b] {
+                    current_values[b] = self.realizations[argmax][b];
+                }
+            })
+        }
+
+        greedy_value
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ProbeMax {
+    /// Number of Boxes
+    n: usize,
+    /// Size of Support
+    v: usize,
+    /// Boxes
+    boxes: Vec<WeightedDistribution>,
+    /// Non-Adaptive Policy
+    non_adaptive_policy: (Vec<usize>, f64),
+}
+
+impl ProbeMax {
+    /// Create a ProbeMax Instance using a Max-Reduction
+    pub fn from_bpr_max(bpr: &BipartiteRegulatorProbing) -> Self {
+        let n = bpr.get_na();
+        let v = bpr.get_vs();
+        let boxes: Vec<WeightedDistribution> = (0..n)
+            .map(|i| WeightedDistribution::max_distribution(&bpr.get_regulator(i)))
+            .collect();
+
+        let non_adaptive_policy = ProbeMax::compute_namp_policy(&boxes);
+
+        Self {
+            n,
+            v,
+            boxes,
+            non_adaptive_policy,
+        }
+    }
+
+    /// Create a ProbeMax Instance using a Sum-Reduction
+    pub fn from_bpr_sum(bpr: &BipartiteRegulatorProbing) -> Self {
+        let n = bpr.get_na();
+        let v = (bpr.get_vs() - 1) * bpr.get_nb() + 1;
+        let boxes: Vec<WeightedDistribution> = (0..n)
+            .map(|i| WeightedDistribution::sum_distribution(&bpr.get_regulator(i)))
+            .collect();
+
+        let non_adaptive_policy = ProbeMax::compute_namp_policy(&boxes);
+
+        Self {
+            n,
+            v,
+            boxes,
+            non_adaptive_policy,
+        }
+    }
+
+    /// Get the number of Boxes
+    #[inline]
+    pub fn get_n(&self) -> usize {
+        self.n
+    }
+
+    /// Get the Size of Support
+    #[inline]
+    pub fn get_v(&self) -> usize {
+        self.v
+    }
+
+    /// Get all boxes
+    #[inline]
+    pub fn get_boxes(&self) -> &Vec<WeightedDistribution> {
+        &self.boxes
+    }
+
+    /// Get a single box
+    #[inline]
+    pub fn get_box(&self, i: usize) -> &WeightedDistribution {
+        &self.boxes[i]
+    }
+
+    /// Get the Non-Adaptive Policy
+    #[inline]
+    pub fn get_policy(&self) -> &Vec<usize> {
+        &self.non_adaptive_policy.0
+    }
+
+    /// Get the Non-Adaptive Policy Time
+    #[inline]
+    pub fn get_policy_time(&self) -> f64 {
+        self.non_adaptive_policy.1
+    }
+
+    /// Create an Instance
+    #[inline]
+    pub fn create_instance<R: Rng>(&self, rng: &mut R) -> ProbeMaxInstance {
+        ProbeMaxInstance::new(rng, self)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ProbeMaxInstance<'a> {
+    /// Reference to ProbeMax
+    pm: &'a ProbeMax,
+    /// Realizations of Boxes
+    realizations: Vec<usize>,
+    /// Cumulative optimal value of Boxes
+    cum_opt_realizations: Vec<usize>,
+    /// Time taken for computation of optimal values
+    opt_time: f64,
+}
+
+impl<'a> ProbeMaxInstance<'a> {
+    /// Create an Instance from a BPR model
+    #[inline]
+    pub fn new<R: Rng>(rng: &mut R, pm: &'a ProbeMax) -> Self {
+        let realizations: Vec<usize> = (0..pm.get_n())
+            .map(|i| pm.get_box(i).sample_index(rng))
+            .collect();
+
+        let timer = Instant::now();
+        
+        // Sorted Realizations based on value
+        let mut sorted_realizations = realizations.clone();
+        sorted_realizations.sort_by(|a, b| b.cmp(a));
+
+        // Cumulative optimal values
+        let mut cum_opt_realizations: Vec<usize> = Vec::with_capacity(sorted_realizations.len());
+        cum_opt_realizations.push(sorted_realizations[0]);
+        for i in 1..sorted_realizations.len() {
+            cum_opt_realizations.push(cum_opt_realizations[i - 1] + sorted_realizations[i]);
+        }
+
+        Self {
+            pm,
+            realizations,
+            cum_opt_realizations,
+            opt_time: timer.elapsed().as_secs_f64(),
+        }
+    }
+
+    /// Get ProbeMax
+    #[inline]
+    pub fn get_probemax(&self) -> &ProbeMax {
+        &self.pm
+    }
+
+    /// Get the realization of a single box
+    #[inline]
+    pub fn get_realization(&self, i: usize) -> usize {
+        self.realizations[i]
+    }
+
+    /// Get the optimal offline value for l boxes
+    #[inline]
+    pub fn get_optimal_value(&self, l: usize) -> usize {
+        self.cum_opt_realizations[l - 1]
+    }
+
+    /// Get the time needed for computation of optimal subsets
+    #[inline]
+    pub fn get_optimal_time(&self) -> f64 {
+        self.opt_time
+    }
+
+    /// Get the value of the non-adaptive policy
+    #[inline]
+    pub fn get_non_adap_value(&self, k: usize, l: usize) -> (usize, f64) {
+        let timer = Instant::now();
+
+        let mut non_adap_realizations: Vec<usize> = self
+            .pm
+            .get_policy()
+            .iter()
+            .take(k)
+            .map(|i| self.realizations[*i])
+            .collect();
+        non_adap_realizations.sort_by(|a, b| b.cmp(a));
+
+        (non_adap_realizations.into_iter().take(l).sum(), self.pm.get_policy_time() + timer.elapsed().as_secs_f64())
     }
 }
