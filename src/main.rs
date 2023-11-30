@@ -1,10 +1,11 @@
-use std::{fs::OpenOptions, io::Write, path::PathBuf, time::Instant};
+use std::{fs::{OpenOptions, File}, io::Write, path::PathBuf, time::Instant};
 
 use bpr::{
     model::{BipartiteRegulatorProbing, ProbeMax},
     GoalFunction, compute_opt_l_values, compute_k_l_pairs,
 };
-use rand::Rng;
+
+use rayon::prelude::*;
 use structopt::StructOpt;
 use serde_derive::Serialize;
 
@@ -54,29 +55,44 @@ struct Result {
     time: f64,
 }
 
-fn main() {
+fn main() -> std::io::Result<()>  {
     let params = Parameters::from_args();
 
     assert!(params.log.is_some(), "Log Path must be given!");
 
-    let logfile = OpenOptions::new()
-        .write(true)
-        .append(true)
-        .create(true)
-        .open(params.log.as_ref().unwrap())
-        .unwrap();
+    std::fs::create_dir_all(params.log.as_ref().unwrap())?;
 
-    let mut rng = rand::thread_rng();
+    let logfiles: Vec<File> = (0..params.iterations).map(|i| {
+        let mut path = params.log.as_ref().unwrap().clone().into_os_string();
+        path.push(format!("/{:?}_{}.json", params.goal, i));
+        
+        OpenOptions::new()
+            .write(true)
+            .append(true)
+            .create(true)
+            .open(path)
+            .unwrap()
+    }).collect();
+
+    println!("{}", num_cpus::get());
+
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(num_cpus::get())
+        .build_global()
+        .unwrap_or_else(|e| println!("Failed to set the number of threads used by rayon: {}", e));
 
     match params.goal {
-        GoalFunction::MAX => eval_max(&params, logfile, &mut rng),
-        GoalFunction::SUM => eval_sum(&params, logfile, &mut rng),
-        GoalFunction::COV => eval_cov(&params, logfile, &mut rng),
+        GoalFunction::MAX => eval_max(&params, logfiles),
+        GoalFunction::SUM => eval_sum(&params, logfiles),
+        GoalFunction::COV => eval_cov(&params, logfiles),
     };
+    
+    Ok(())
 }
 
-fn eval_max<R: Rng, W: Write>(params: &Parameters, mut logfile: W, rng: &mut R) {
-    for i in 0..params.iterations {
+fn eval_max(params: &Parameters, logfiles: Vec<File>) {
+    logfiles.into_par_iter().enumerate().for_each(|(i, mut logfile)| {
+        let rng = &mut rand::thread_rng();
         let pm = ProbeMax::from_bpr_max(&BipartiteRegulatorProbing::create_random(
             rng,
             params.na,
@@ -139,11 +155,13 @@ fn eval_max<R: Rng, W: Write>(params: &Parameters, mut logfile: W, rng: &mut R) 
                 let _ = writeln!(logfile, "{}", serde_json::to_string(&res).unwrap());
             }
         }
-    }
+    });
 }
 
-fn eval_sum<R: Rng, W: Write>(params: &Parameters, mut logfile: W, rng: &mut R) {
-    for i in 0..params.iterations {
+
+fn eval_sum(params: &Parameters, logfiles: Vec<File>) {
+    logfiles.into_par_iter().enumerate().for_each(|(i, mut logfile)| {
+        let rng = &mut rand::thread_rng();
         let pm = ProbeMax::from_bpr_sum(&BipartiteRegulatorProbing::create_random(
             rng,
             params.na,
@@ -206,11 +224,13 @@ fn eval_sum<R: Rng, W: Write>(params: &Parameters, mut logfile: W, rng: &mut R) 
                 let _ = writeln!(logfile, "{}", serde_json::to_string(&res).unwrap());
             }
         }
-    }
+    });
 }
 
-fn eval_cov<R: Rng, W: Write>(params: &Parameters, mut logfile: W, rng: &mut R) {
-    for i in 0..params.iterations {
+
+fn eval_cov(params: &Parameters, logfiles: Vec<File>) {
+    logfiles.into_par_iter().enumerate().for_each(|(i, mut logfile)| {
+        let rng = &mut rand::thread_rng();
         let mut bpr = BipartiteRegulatorProbing::create_random(
             rng,
             params.na,
@@ -295,5 +315,5 @@ fn eval_cov<R: Rng, W: Write>(params: &Parameters, mut logfile: W, rng: &mut R) 
                 let _ = writeln!(logfile, "{}", serde_json::to_string(&res).unwrap());
             }
         }
-    }
+    });
 }
