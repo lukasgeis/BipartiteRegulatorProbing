@@ -26,20 +26,23 @@ impl BipartiteRegulatorProbing {
         nb: usize,
         vs: usize,
         poisson: bool,
+        num_instances: usize,
     ) -> Self {
         let edges: Vec<Vec<WeightedDistribution>> = (0..na)
             .map(|_| {
                 (0..nb)
                     .map(|_| {
                         if vs <= 1 {
-                            return WeightedDistribution::new(&[1.0]);
+                            return WeightedDistribution::new(rng, &[1.0], num_instances);
                         }
 
-                        if poisson {
-                            WeightedDistribution::new(&create_poisson_weights(rng, vs))
+                        let weights = if poisson {
+                            create_poisson_weights(rng, vs)
                         } else {
-                            WeightedDistribution::new(&create_random_weights(rng, vs))
-                        }
+                            create_random_weights(rng, vs)
+                        };
+
+                        WeightedDistribution::new(rng, &weights, num_instances)
                     })
                     .collect()
             })
@@ -144,8 +147,8 @@ impl BipartiteRegulatorProbing {
 
     /// Create an Instance
     #[inline]
-    pub fn create_instance<R: Rng>(&self, rng: &mut R) -> Instance {
-        Instance::new(rng, self)
+    pub fn create_instance(&self, instance_index: usize) -> Instance {
+        Instance::new(self, instance_index)
     }
 }
 
@@ -160,11 +163,11 @@ pub struct Instance<'a> {
 impl<'a> Instance<'a> {
     /// Create an Instance from a BPR model and computes the vector of a GREEDY algorithm for Offline-Cov
     #[inline]
-    pub fn new<R: Rng>(rng: &mut R, bpr: &'a BipartiteRegulatorProbing) -> Self {
+    pub fn new(bpr: &'a BipartiteRegulatorProbing, instance_index: usize) -> Self {
         let realizations: Vec<Vec<usize>> = (0..bpr.get_na())
             .map(|a| {
                 (0..bpr.get_nb())
-                    .map(|b| bpr.get_edge(a, b).sample_index(rng))
+                    .map(|b| bpr.get_edge(a, b).get_sample(instance_index))
                     .collect()
             })
             .collect();
@@ -345,8 +348,8 @@ impl ProbeMax {
 
     /// Create an Instance
     #[inline]
-    pub fn create_instance<R: Rng>(&self, rng: &mut R) -> ProbeMaxInstance {
-        ProbeMaxInstance::new(rng, self)
+    pub fn create_instance(&self, instance_index: usize) -> ProbeMaxInstance {
+        ProbeMaxInstance::new(self, instance_index)
     }
 }
 
@@ -365,9 +368,9 @@ pub struct ProbeMaxInstance<'a> {
 impl<'a> ProbeMaxInstance<'a> {
     /// Create an Instance from a BPR model
     #[inline]
-    pub fn new<R: Rng>(rng: &mut R, pm: &'a ProbeMax) -> Self {
+    pub fn new(pm: &'a ProbeMax, instance_index: usize) -> Self {
         let realizations: Vec<usize> = (0..pm.get_n())
-            .map(|i| pm.get_box(i).sample_index(rng))
+            .map(|i| pm.get_box(i).get_sample(instance_index))
             .collect();
 
         let timer = Instant::now();

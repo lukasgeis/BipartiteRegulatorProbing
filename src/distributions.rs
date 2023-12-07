@@ -4,171 +4,11 @@
 //! It also provides a weighted distribution which extends the AliasTable to allow for computation with
 //! individual probabilities and expected values.
 
-use rand::{prelude::Distribution, Rng};
+use rand::Rng;
 
-use std::{
-    fmt::Debug,
-    ops::{Add, AddAssign, Sub},
-};
-
-use num::{One, Zero};
-use rand::distributions::uniform::SampleUniform;
 use statrs::distribution::{Discrete, Poisson};
 
-use crate::is_close;
 
-pub trait Weight:
-    Copy
-    + Debug
-    + Sized
-    + PartialEq
-    + PartialOrd
-    + Default
-    + Zero
-    + One
-    + SampleUniform
-    + Add<Output = Self>
-    + AddAssign
-    + Sub<Output = Self>
-{
-    fn as_f64(self) -> f64;
-    fn from_f64(from: f64) -> Self;
-}
-
-macro_rules! impl_weight {
-    ($t:ty) => {
-        impl Weight for $t {
-            #[inline]
-            fn as_f64(self) -> f64 {
-                self as f64
-            }
-
-            #[inline]
-            fn from_f64(from: f64) -> Self {
-                from as $t
-            }
-        }
-    };
-}
-
-impl_weight!(u8);
-impl_weight!(u16);
-impl_weight!(u32);
-impl_weight!(u64);
-impl_weight!(u128);
-impl_weight!(usize);
-
-impl_weight!(f32);
-impl_weight!(f64);
-
-/// A data structure allowing for constant time sampling of weighted indices `0..n`.
-/// Represented using a static Alias-Table.
-#[derive(Debug, Clone)]
-pub struct WeightedSampling {
-    alias: Vec<usize>,
-    probs: Vec<f64>,
-}
-
-impl WeightedSampling {
-    /// Creates a new AliasTable from a list of weights.
-    /// Note that if all weights are `0`, then it returns a uniform distribution over all indices.
-    pub fn new<W: Weight>(weights: &[W]) -> Self {
-        let (alias, probs) = Self::compute_table(weights);
-        Self { alias, probs }
-    }
-
-    /// Creates a weighted distribution from a list of weights.
-    pub fn with_distribution<W: Weight>(weights: &[W]) -> WeightedDistribution {
-        WeightedDistribution::new(weights)
-    }
-
-    /// Initializes an ALiasTable using a list of aliases and probabilities.
-    /// Correctness must be enforce by the user.
-    pub fn init(alias: Vec<usize>, probs: Vec<f64>) -> Self {
-        Self { alias, probs }
-    }
-
-    /// Computes an AliasTable based off a list of weights.
-    pub fn compute_table<W: Weight>(weights: &[W]) -> (Vec<usize>, Vec<f64>) {
-        let n = weights.len();
-        let mean = {
-            let mut sum = W::zero();
-            for w in weights {
-                sum += *w;
-            }
-            sum.as_f64() / n as f64
-        };
-
-        let (mut below, mut above) = {
-            let mut above = Vec::with_capacity(n);
-            let mut below = Vec::with_capacity(n);
-            for (i, w) in weights.iter().enumerate() {
-                let w_f64 = (*w).as_f64();
-                if w_f64 < mean {
-                    below.push((i, w_f64));
-                } else {
-                    above.push((i, w_f64));
-                }
-            }
-            (below, above)
-        };
-
-        let mut alias = vec![0; n];
-        let mut probs = vec![0.0; n];
-
-        while let Some((i, wi)) = below.pop() {
-            let (j, wj) = above.pop().unwrap();
-
-            alias[i] = j;
-            probs[i] = wi / mean;
-
-            let wd = {
-                let wd = wj + wi - mean;
-                if is_close(wd, mean) {
-                    mean
-                } else {
-                    wd
-                }
-            };
-            if wd <= 0.0 {
-                continue;
-            }
-
-            if wd < mean {
-                below.push((j, wd));
-            } else {
-                above.push((j, wd));
-            }
-        }
-
-        while let Some((i, _)) = above.pop() {
-            alias[i] = i;
-            probs[i] = 1.0;
-        }
-
-        (alias, probs)
-    }
-
-    /// Samples an index from the AliasTable.
-    /// Note that `.sample(rng)` is preserved for the [Distribution Trait](rand::distributions::Distribution).
-    pub fn sample_index<R: Rng + ?Sized>(&self, rng: &mut R) -> usize {
-        let row = rng.gen_range(0..self.alias.len());
-        let val = rng.gen_range(0.0..1.0);
-
-        if val < self.probs[row] {
-            row
-        } else {
-            self.alias[row]
-        }
-    }
-}
-
-impl Distribution<usize> for WeightedSampling {
-    #[inline]
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> usize {
-        self.sample_index(rng)
-    }
-}
 
 /// Extends `WeightedSampling` by also storing the individual probabilities and expected values
 /// to allow for computation with those as well as sampling.
@@ -177,32 +17,78 @@ pub struct WeightedDistribution {
     n: usize,
     cum_prob: Vec<f64>,
     cum_expe: Vec<f64>,
-    sampling: WeightedSampling,
+    samples: Vec<usize>,
 }
 
 impl WeightedDistribution {
     /// Creates a weighted distribution from a list of weights.
     /// Allows for constant time
-    /// - Sampling
     /// - Probabilities
     /// - Expected Values
-    pub fn new<W: Weight>(weights: &[W]) -> Self {
+    pub fn new<R: Rng>(rng: &mut R, weights: &[f64], num_samples: usize) -> Self {
         let n = weights.len();
         assert!(n > 0);
 
-        let sampling = WeightedSampling::new(weights);
-
         let total_weight = {
-            let mut sum = W::zero();
+            let mut sum = 0.0f64;
             for w in weights {
                 sum += *w;
             }
-            sum.as_f64()
+            sum
         };
 
         let exact_probabilities: Vec<f64> = weights
             .into_iter()
-            .map(|w| w.as_f64() / total_weight)
+            .map(|w| w / total_weight)
+            .collect();
+
+        let sample_probs: Vec<f64> = (0..num_samples).map(|_| rng.gen_range(0.0..=1.0)).collect();
+        let mut samples: Vec<usize> = vec![0; num_samples];
+
+        let mut cum_prob = Vec::with_capacity(n);
+        let mut cum_expe = Vec::with_capacity(n);
+
+        cum_prob.push(exact_probabilities[0]);
+        cum_expe.push(0.0);
+
+        for (i, p) in exact_probabilities.into_iter().enumerate() {
+            if i == 0 {
+                continue;
+            }
+
+            cum_prob.push(cum_prob[i - 1] + p);
+            cum_expe.push(cum_expe[i - 1] + p * i as f64);
+
+            (0..num_samples).for_each(|j| {
+                if sample_probs[j] <= cum_prob[i] {
+                    samples[j] = i;
+                }
+            });
+        }
+
+        Self {
+            n,
+            cum_prob,
+            cum_expe,
+            samples,
+        }
+    }
+
+    pub fn new_without_rng(weights: &[f64], samples: Vec<usize>) -> Self {
+        let n = weights.len();
+        assert!(n > 0);
+
+        let total_weight = {
+            let mut sum = 0.0f64;
+            for w in weights {
+                sum += *w;
+            }
+            sum
+        };
+
+        let exact_probabilities: Vec<f64> = weights
+            .into_iter()
+            .map(|w| w / total_weight)
             .collect();
 
         let mut cum_prob = Vec::with_capacity(n);
@@ -224,7 +110,7 @@ impl WeightedDistribution {
             n,
             cum_prob,
             cum_expe,
-            sampling,
+            samples,
         }
     }
 
@@ -240,11 +126,14 @@ impl WeightedDistribution {
         self.n
     }
 
-    /// Samples an index from the AliasTable.
-    /// Note that `.sample(rng)` is preserved for the [Distribution Trait](rand::distributions::Distribution).
     #[inline]
-    pub fn sample_index<R: Rng + ?Sized>(&self, rng: &mut R) -> usize {
-        self.sampling.sample_index(rng)
+    pub fn get_sample(&self, i: usize) -> usize {
+        self.samples[i]
+    }
+
+    #[inline]
+    pub fn num_samples(&self) -> usize {
+        self.samples.len()
     }
 
     /// `P[X = i]`
@@ -317,7 +206,12 @@ impl WeightedDistribution {
         let n: usize = dist[0].size();
 
         if n <= 1 {
-            return Self::new(&[1.0]);
+            return Self {
+                n,
+                cum_prob: vec![1.0f64],
+                cum_expe: vec![0.0f64],
+                samples: vec![0],
+            };
         }
 
         let weights: Vec<f64> = (0..n)
@@ -335,7 +229,17 @@ impl WeightedDistribution {
             })
             .collect();
 
-        Self::new(&weights)
+        let samples: Vec<usize> = (0..dist[0].num_samples()).map(|i| {
+            let mut max = 0usize;
+            for j in 0..dist.len() {
+                if dist[j].get_sample(i) > max {
+                    max = dist[j].get_sample(i);
+                }
+            }
+            max
+        }).collect();
+
+        Self::new_without_rng(&weights, samples)
     }
 
     pub fn sum_distribution(dist: &[Self]) -> Self {
@@ -371,16 +275,18 @@ impl WeightedDistribution {
             all_weights = new_weights;
         }
 
-        Self::new(&all_weights[0])
+        let samples: Vec<usize> = (0..dist[0].num_samples()).map(|i| {
+            let mut sum = 0usize;
+            for j in 0..dist.len() {
+                sum += dist[j].get_sample(i);
+            }
+            sum
+        }).collect();
+
+        Self::new_without_rng(&all_weights[0], samples)
     }
 }
 
-impl Distribution<usize> for WeightedDistribution {
-    #[inline]
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> usize {
-        self.sampling.sample_index(rng)
-    }
-}
 
 /// Creates a vector of random weights between 0.0 and 1.0
 #[inline]

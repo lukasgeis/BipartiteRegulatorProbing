@@ -99,10 +99,11 @@ fn eval_max(params: &Parameters, logfiles: Vec<File>) {
             params.nb,
             params.vs,
             params.poisson,
+            params.instances,
         ));
 
         for j in 0..params.instances {
-            let ins = pm.create_instance(rng);
+            let ins = pm.create_instance(j);
 
             for opt_l in compute_opt_l_values(params.na) {
                 let res = Result {
@@ -168,10 +169,12 @@ fn eval_sum(params: &Parameters, logfiles: Vec<File>) {
             params.nb,
             params.vs,
             params.poisson,
+            params.instances,
         ));
 
+         
         for j in 0..params.instances {
-            let ins = pm.create_instance(rng);
+            let ins = pm.create_instance(j);
 
             for opt_l in compute_opt_l_values(params.na) {
                 let res = Result {
@@ -223,7 +226,7 @@ fn eval_sum(params: &Parameters, logfiles: Vec<File>) {
                 };
                 let _ = writeln!(logfile, "{}", serde_json::to_string(&res).unwrap());
             }
-        }
+        } 
     });
 }
 
@@ -237,6 +240,7 @@ fn eval_cov(params: &Parameters, logfiles: Vec<File>) {
             params.nb,
             params.vs,
             params.poisson,
+            params.instances,
         );
 
         for (k, l) in compute_k_l_pairs(params.na) {
@@ -244,7 +248,7 @@ fn eval_cov(params: &Parameters, logfiles: Vec<File>) {
         }
 
         for j in 0..params.instances {
-            let ins = bpr.create_instance(rng);
+            let ins = bpr.create_instance(j);
 
             for opt_l in compute_opt_l_values(params.na) {
                 let res = Result {
