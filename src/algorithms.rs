@@ -38,7 +38,7 @@ impl ProbeMaxInstance<'_> {
         let mut values_heap = BinaryHeap::from(probed_subset.iter().map(|x| self.get_realization(*x)).collect::<Vec<usize>>());
 
         while probed_subset.len() < k {
-            let lval: usize = values_heap.clone().into_iter_sorted().enumerate().find(|(i, _)| *i == probed_subset.len() - l).map(|(_, v)| v).unwrap();
+            let lval: usize = values_heap.clone().into_iter_sorted().take(l).last().unwrap();
 
             let argmax: usize = unprobed_regulators.iter().map(|x| -> (usize, f64) {
                 (x, self.get_probemax().get_box(x).expected_greater(lval))
@@ -49,11 +49,7 @@ impl ProbeMaxInstance<'_> {
             values_heap.push(self.get_realization(argmax));
         }   
 
-        let mut counter = 0;
-        (values_heap.into_iter_sorted().filter(|_| {
-            counter += 1;
-            counter > k - l + 1
-        }).sum(), self.get_probemax().get_policy_time() + timer.elapsed().as_secs_f64())
+        (values_heap.into_iter_sorted().take(l).sum(), self.get_probemax().get_policy_time() + timer.elapsed().as_secs_f64())
     }
 }
 
