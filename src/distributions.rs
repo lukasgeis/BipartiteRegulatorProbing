@@ -60,7 +60,7 @@ impl WeightedDistribution {
             cum_expe.push(cum_expe[i - 1] + p * i as f64);
 
             (0..num_samples).for_each(|j| {
-                if sample_probs[j] <= cum_prob[i] {
+                if sample_probs[j] <= cum_prob[i] && sample_probs[j] >= cum_prob[i - 1] {
                     samples[j] = i;
                 }
             });
