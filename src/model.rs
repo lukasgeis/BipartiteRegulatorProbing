@@ -8,18 +8,24 @@ use crate::distributions::*;
 #[derive(Debug, Clone)]
 pub struct BipartiteRegulatorProbing {
     // Number of Regulators
-    na: usize,
+    pub na: usize,
     // Number of Positions
-    nb: usize,
+    pub nb: usize,
     // Size of Support
-    vs: usize,
+    pub vs: usize,
     // Distributions of Edges
-    edges: Vec<Vec<WeightedDistribution>>,
+    pub edges: Vec<Vec<WeightedDistribution>>,
     // Optional Non-Adaptive COV Policies for given k and l
-    non_adaptive_cov_policies: Vec<(usize, usize, Vec<usize>, f64)>,
+    pub non_adaptive_cov_policies: Vec<(usize, usize, Vec<usize>, f64)>,
 }
 
 impl BipartiteRegulatorProbing {
+    pub fn new(na: usize, nb: usize, vs: usize, edges: Vec<Vec<WeightedDistribution>>) -> Self {
+        Self {
+            na, nb, vs, edges, non_adaptive_cov_policies: Vec::new()
+        }
+    }
+
     pub fn create_random<R: Rng>(
         rng: &mut R,
         na: usize,
