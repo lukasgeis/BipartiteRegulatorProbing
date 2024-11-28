@@ -128,6 +128,12 @@ impl Instance<'_> {
     pub fn adaptive_policy(&self, k: usize, l: usize) -> (usize, f64) {
         let timer = Instant::now();
 
+        let probed_regulators = self.adaptive_policy_regulators(k, l); 
+
+        (self.eval_policy(&probed_regulators, l), timer.elapsed().as_secs_f64())
+    }
+
+    pub fn adaptive_policy_regulators(&self, k: usize, l: usize) -> Vec<usize> {
         let mut unprobed_regulators = BitSet::new_all_set(self.get_model().get_na());
         let mut current_values: Vec<usize> = vec![0; self.get_model().get_nb()];
         let mut probed_regulators: Vec<usize> = Vec::with_capacity(k);
@@ -191,6 +197,6 @@ impl Instance<'_> {
             probed_regulators.push(argmax);
         }
 
-        (self.eval_policy(&probed_regulators, l), timer.elapsed().as_secs_f64())
+        probed_regulators
     }
 }
