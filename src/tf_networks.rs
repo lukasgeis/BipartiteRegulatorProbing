@@ -1,38 +1,29 @@
-use std::{fs::File, io::{BufRead, BufReader, Error, ErrorKind}, path::PathBuf};
+use std::{fs::File, io::{BufRead, BufReader, Error, ErrorKind}, path::PathBuf, time::Instant};
 
-use bpr::{distributions::WeightedDistribution, model::BipartiteRegulatorProbing, GoalFunction};
-use statrs::distribution::{Binomial, Discrete, Poisson};
+use bpr::{distributions::WeightedDistribution, model::{BipartiteRegulatorProbing, NUM_TOP_TRIPLES}};
+use serde_derive::Serialize;
+use statrs::distribution::{Binomial, Discrete};
 use structopt::StructOpt;
-
-
 
 #[derive(Debug, StructOpt)]
 struct Parameters {
     #[structopt(long, parse(from_os_str))]
     file: PathBuf,
 
-    #[structopt(long, parse(from_os_str))]
-    log: PathBuf,
-
     #[structopt(short = "i", long, default_value = "1")]
     iterations: usize,
 
     #[structopt(short = "k", default_value = "10")]
     k: usize,
-
-    #[structopt(short = "l", default_value = "5")]
-    l: usize,
 }
 
 
 fn main() -> std::io::Result<()> {
     let params = Parameters::from_args();
 
-    let _ = std::fs::create_dir_all(&params.log)?;
-
     let (tf_names, gen_names, instance) = parse_file(&params.file, params.iterations)?;
 
-    eval_cov(tf_names, gen_names, instance, params.k, params.l, params.iterations, params.log);
+    eval_cov(tf_names, gen_names, instance, params.k, params.iterations);
     Ok(())
 }
 
@@ -108,14 +99,65 @@ fn parse_file(path: &PathBuf, num: usize) -> Result<(Names, Names, BipartiteRegu
 }
 
 
-fn eval_cov(tfs: Vec<String>, gens: Vec<String>, mut bpr: BipartiteRegulatorProbing, k: usize, l: usize, num: usize,log: PathBuf) {
+fn eval_cov(tfs: Vec<String>, _gens: Vec<String>, mut bpr: BipartiteRegulatorProbing, k: usize, num: usize) {
+    let l = 3usize;
+
     bpr.compute_namp_cov_policy(k, l);
     
     (0..num).for_each(|i| {
         let ins = bpr.create_instance(i);
-        println!("Opt: {} in {}s", ins.get_opt_cov_value(l), ins.get_opt_cov_time());
-        println!("Namp: {} in {}s", ins.eval_policy(bpr.get_policy(k, l).unwrap(), l), bpr.get_policy_time(k, l).unwrap());
-        let (amp, time) = ins.adaptive_policy(k, l);
-        println!("Amp: {} in {}s", amp, time);
+
+        let opt = ins.top_opt_triples();
+        let namp = ins.find_top_triples(bpr.get_policy(k, 3).unwrap());
+
+        let timer = Instant::now();
+        let amp = ins.adaptive_policy_regulators(k, 3);
+        let time = AlgoTimes(timer.elapsed().as_secs_f64(), bpr.get_policy_time(k, 3).unwrap());
+
+        let amp = ins.find_top_triples(&amp);
+
+
+        let res = TfNetworkResult {
+            k,
+            opt: (opt, &tfs).into(),
+            namp: (namp, &tfs).into(),
+            amp: (amp, &tfs).into(),
+            time
+        };
+
+        println!("{}", serde_json::to_string(&res).unwrap());
     });
+}
+
+#[derive(Debug, Serialize)]
+struct TripleTFResult((String, String, String), usize);
+
+#[derive(Debug, Serialize)]
+struct TopTriples([TripleTFResult; NUM_TOP_TRIPLES]);
+
+impl From<([(usize, usize, usize, usize); NUM_TOP_TRIPLES], &Vec<String>)> for TopTriples {
+    fn from(value: ([(usize, usize, usize, usize); NUM_TOP_TRIPLES], &Vec<String>)) -> Self {
+        TopTriples(value.0.map(|x| -> TripleTFResult {
+            TripleTFResult(
+                (
+                    value.1[x.0].clone(),
+                    value.1[x.1].clone(),
+                    value.1[x.2].clone()
+                ),
+                x.3
+            )
+        }))
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct AlgoTimes(f64, f64);
+
+#[derive(Serialize, Debug)]
+struct TfNetworkResult {
+    k: usize,
+    opt: TopTriples,
+    amp: TopTriples,
+    namp: TopTriples,
+    time: AlgoTimes,
 }

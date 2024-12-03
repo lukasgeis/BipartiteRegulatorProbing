@@ -1,9 +1,12 @@
 use std::time::Instant;
 
+use itertools::Itertools;
 use rand::Rng;
 use ez_bitset::bitset::*;
 
 use crate::distributions::*;
+
+pub const NUM_TOP_TRIPLES: usize = 10;
 
 #[derive(Debug, Clone)]
 pub struct BipartiteRegulatorProbing {
@@ -265,6 +268,51 @@ impl<'a> Instance<'a> {
 
         greedy_value
     }
+
+    pub fn find_top_triples(&self, policy: &[usize]) -> [(usize, usize, usize, usize); NUM_TOP_TRIPLES] {
+        assert!(policy.len() > 3);
+
+        let len = policy.len();
+
+        let mut res = [(0, 0, 0, 0); NUM_TOP_TRIPLES];
+        
+        for i in 0..len {
+            for j in (i + 1)..len {
+                for k in (j + 1)..len {
+                    let pi = policy[i];
+                    let pj = policy[j];
+                    let pk = policy[k];
+
+                    let val: usize = (0..self.bpr.get_nb()).map(|b| {
+                        self.realizations[pi][b].max(self.realizations[pj][b]).max(self.realizations[pk][b])
+                    }).sum();
+
+                    if val > res[0].3 {
+                        insert_in_place(&mut res, (pi, pj, pk, val), 0);
+                    } else {
+                        for l in 1..NUM_TOP_TRIPLES {
+                            if res[l - 1].3 >= val && val > res[l].3 {
+                                insert_in_place(&mut res, (pi, pj, pk, val), l);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        res
+    }
+
+    pub fn top_opt_triples(&self) -> [(usize, usize, usize, usize); NUM_TOP_TRIPLES] {
+        let all_regulators = (0..self.bpr.get_na()).collect_vec(); 
+        self.find_top_triples(&all_regulators)
+    }
+}
+
+fn insert_in_place<T>(array: &mut [T], value: T, index: usize) {
+    array[index..].rotate_right(1);
+    array[index] = value;
 }
 
 #[derive(Debug, Clone)]
