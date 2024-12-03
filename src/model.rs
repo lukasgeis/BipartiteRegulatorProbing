@@ -101,8 +101,7 @@ impl BipartiteRegulatorProbing {
     pub fn has_policy(&self, k: usize, l: usize) -> bool {
         self.non_adaptive_cov_policies
             .iter()
-            .find(|(a, b, _, _)| *a == k && *b == l)
-            .is_some()
+            .any(|(a, b, _, _)| *a == k && *b == l)
     }
 
     /// Get the policy for a specific (k,l) pair
@@ -127,7 +126,7 @@ impl BipartiteRegulatorProbing {
     /// If no such policy exists, take a policy with high enough l and take its first l probes.
     #[inline]
     pub fn get_l_policy(&self, l: usize) -> (Vec<usize>, f64) {
-        if self.non_adaptive_cov_policies.len() == 0 {
+        if self.non_adaptive_cov_policies.is_empty() {
             return (Vec::new(), 0.0);
         }
 
@@ -215,7 +214,7 @@ impl<'a> Instance<'a> {
     /// Get the BPR-model
     #[inline]
     pub fn get_model(&self) -> &BipartiteRegulatorProbing {
-        &self.bpr
+        self.bpr
     }
 
     /// Get an Edge-Realization
@@ -333,7 +332,7 @@ impl ProbeMax {
         let n = bpr.get_na();
         let v = bpr.get_vs();
         let boxes: Vec<WeightedDistribution> = (0..n)
-            .map(|i| WeightedDistribution::max_distribution(&bpr.get_regulator(i)))
+            .map(|i| WeightedDistribution::max_distribution(bpr.get_regulator(i)))
             .collect();
 
         let non_adaptive_policy = ProbeMax::compute_namp_policy(&boxes);
@@ -351,7 +350,7 @@ impl ProbeMax {
         let n = bpr.get_na();
         let v = (bpr.get_vs() - 1) * bpr.get_nb() + 1;
         let boxes: Vec<WeightedDistribution> = (0..n)
-            .map(|i| WeightedDistribution::sum_distribution(&bpr.get_regulator(i)))
+            .map(|i| WeightedDistribution::sum_distribution(bpr.get_regulator(i)))
             .collect();
 
         let non_adaptive_policy = ProbeMax::compute_namp_policy(&boxes);
@@ -451,7 +450,7 @@ impl<'a> ProbeMaxInstance<'a> {
     /// Get ProbeMax
     #[inline]
     pub fn get_probemax(&self) -> &ProbeMax {
-        &self.pm
+        self.pm
     }
 
     /// Get the realization of a single box

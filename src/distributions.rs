@@ -38,7 +38,7 @@ impl WeightedDistribution {
         };
 
         let exact_probabilities: Vec<f64> = weights
-            .into_iter()
+            .iter()
             .map(|w| w / total_weight)
             .collect();
 
@@ -87,7 +87,7 @@ impl WeightedDistribution {
         };
 
         let exact_probabilities: Vec<f64> = weights
-            .into_iter()
+            .iter()
             .map(|w| w / total_weight)
             .collect();
 
@@ -260,10 +260,10 @@ impl WeightedDistribution {
                 .collect()
         }
 
-        let mut all_weights: Vec<Vec<f64>> = dist.into_iter().map(|d| d.get_probs()).collect();
+        let mut all_weights: Vec<Vec<f64>> = dist.iter().map(|d| d.get_probs()).collect();
 
         while all_weights.len() > 1 {
-            let mut new_weights: Vec<Vec<f64>> = Vec::with_capacity(all_weights.len() + 1 / 2);
+            let mut new_weights: Vec<Vec<f64>> = Vec::with_capacity(all_weights.len());
             while all_weights.len() > 1 {
                 let a = all_weights.pop().unwrap();
                 let b = all_weights.pop().unwrap();

@@ -166,12 +166,10 @@ impl Instance<'_> {
                                 } else {
                                     0.0
                                 }
+                            } else if self.get_realization(temp_a, b) as f64 > temp_values[b] {
+                                self.get_realization(temp_a, b) as f64 - temp_values[b]
                             } else {
-                                if self.get_realization(temp_a, b) as f64 > temp_values[b] {
-                                    self.get_realization(temp_a, b) as f64 - temp_values[b]
-                                } else {
-                                    0.0
-                                }
+                                0.0
                             }
                         }).sum())
                     }).max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap()).unwrap().0;
@@ -182,10 +180,8 @@ impl Instance<'_> {
                             if self.get_model().get_edge(temp_argmax, b).expected_value() > temp_values[b] {
                                 temp_values[b] = self.get_model().get_edge(temp_argmax, b).expected_value() - temp_values[b];
                             } 
-                        } else {
-                            if self.get_realization(temp_argmax, b) as f64 > temp_values[b] {
-                                temp_values[b] = self.get_realization(temp_argmax, b) as f64 - temp_values[b];
-                            } 
+                        } else if self.get_realization(temp_argmax, b) as f64 > temp_values[b] {
+                            temp_values[b] = self.get_realization(temp_argmax, b) as f64 - temp_values[b];
                         }
                     }
                 }

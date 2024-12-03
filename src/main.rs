@@ -67,7 +67,7 @@ fn main() -> std::io::Result<()>  {
         path.push(format!("/{:?}_{}.json", params.goal, i));
         
         OpenOptions::new()
-            .write(true)
+            
             .append(true)
             .create(true)
             .open(path)
