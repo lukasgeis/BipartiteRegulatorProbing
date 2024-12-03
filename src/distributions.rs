@@ -218,11 +218,11 @@ impl WeightedDistribution {
             .map(|i| {
                 let mut inc = 1.0;
                 let mut out = 1.0;
-                for j in 0..dist.len() {
+                for d in dist {
                     if i < n - 1 {
-                        inc *= dist[j].prob_less(i + 1);
+                        inc *= d.prob_less(i + 1);
                     }
-                    out *= dist[j].prob_less(i);
+                    out *= d.prob_less(i);
                 }
 
                 inc - out
@@ -231,9 +231,9 @@ impl WeightedDistribution {
 
         let samples: Vec<usize> = (0..dist[0].num_samples()).map(|i| {
             let mut max = 0usize;
-            for j in 0..dist.len() {
-                if dist[j].get_sample(i) > max {
-                    max = dist[j].get_sample(i);
+            for d in dist {
+                if d.get_sample(i) > max {
+                    max = d.get_sample(i);
                 }
             }
             max
@@ -277,8 +277,8 @@ impl WeightedDistribution {
 
         let samples: Vec<usize> = (0..dist[0].num_samples()).map(|i| {
             let mut sum = 0usize;
-            for j in 0..dist.len() {
-                sum += dist[j].get_sample(i);
+            for d in dist {
+                sum += d.get_sample(i);
             }
             sum
         }).collect();

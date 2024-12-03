@@ -9,7 +9,7 @@ use crate::{
 
 impl ProbeMax {
     /// Computes a Non-Adaptive Policy for this ProbeMax Instance
-    pub fn compute_namp_policy(boxes: &Vec<WeightedDistribution>) -> (Vec<usize>, f64) {
+    pub fn compute_namp_policy(boxes: &[WeightedDistribution]) -> (Vec<usize>, f64) {
         let timer = Instant::now();
 
         let mut exp_pairs: Vec<(usize, f64)> = boxes
