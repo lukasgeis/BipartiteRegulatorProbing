@@ -4,11 +4,11 @@ BINARY="./target/release/tf_networks"
 OUTPUTDIR="data"
 mkdir -p $OUTPUTDIR
 
-LEUKEMIA="tf_networks_data/IHECRE00000187_GeneTFMatrix_FracBoundCREs_Sub_TCellLeukemia.txt"
-LEUKEMIA_SHUFFLED="tf_networks_data/IHECRE00000187_GeneTFMatrix_FracBoundCREs_Shuffled_TFBS_Sub_TCellLeukemia.txt"
-MEDIATED="tf_networks_data/IHECRE00000187_GeneTFMatrix_FracBoundCREs_Sub_T_CELL_MEDIATED_IMMUNITY.txt"
-MEDIATED_SHUFFLED="tf_networks_data/IHECRE00000187_GeneTFMatrix_FracBoundCREs_Shuffled_TFBS_Sub_T_CELL_MEDIATED_IMMUNITY.txt"
-RANDOM_GENES="tf_networks_data/IHECRE00000187_GeneTFMatrix_FracBoundCREs_Sub_RandomGenes.txt"
+LEUKEMIA="tf_networks_data/leukemia.txt"
+LEUKEMIA_SHUFFLED="tf_networks_data/leukemia_shuffled.txt"
+MEDIATED="tf_networks_data/mediated.txt"
+MEDIATED_SHUFFLED="tf_networks_data/mediated_shuffled.txt"
+RANDOM_GENES="tf_networks_data/random_genes.txt"
 
 for KVAL in 30 40 50
 do
@@ -19,5 +19,6 @@ do
     $BINARY --file $RANDOM_GENES -k $KVAL -i 10 >> "${OUTPUTDIR}/random_genes.json" &
 
     wait
+    echo "Round ${KVAL} done"
 done
 
