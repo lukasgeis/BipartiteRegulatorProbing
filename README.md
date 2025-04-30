@@ -13,39 +13,7 @@ After that you can modify the code as you wish and compile using the preinstalle
 cargo build --release
 ```
 
-### Input Format
-
-The input format is strictly dictated and cannot be changed without changing the code. You can create Instances of `BPR` using Python3 and [scripts/createData.py](scripts/createData.py) with the following command:
-```bash
-python3 scripts/createData.py --number <Number of Graphs> \
-    --na_min <Minimum Number of Regulators> \
-    --na_max <Maximum Number of Regulators> \
-    --nb_min <Minimum Number of Positions> \
-    --nb_max <Maximum Number of Positions> \
-    --vs_min <Minimum Size of Support> \
-    --vs_max <Maximum Size of Support> \
-    --output <Output Directory> 
-    [--name <Custom Name>]
-```
-You can see an example file here: [EXAMPLE](EXAMPLE)
-
-Alternatively, you can create graph instances at runtime with prespecified parameters
-
 ### Running the algorithms
-As there are multiple possibilities of choosing $k$ and $\ell$ for every graph with $n_A \mathit{Regulators}$, there are multiple ways to run algorithms all using the same main binary created.
-The standard prefix is always
-```bash
-target/release/bpr --file <Input Graph file> \
-    --log <Path to log-file> \
-    --instances <Number of Instances> \
-    --goal <Goal Function> \
-    --algorithm <Algorithm> \
-    --parameters <Number> \
-    [--not-opt]
-```
-`Parameters` is used to run on every possible fraction-combination of $k$ and $\ell$. Namely, if `parameters` $= 2$, then the algorithms will run on $k = \frac{1}{3}n_A, \frac{2}{3}n_A$ and $\ell = \frac{1}{3}k, \frac{2}{3}k, k$.
-
-If you wish to create graph instances at runtime, instead use
 ```bash
 target/release/bpr --log <Path to log-file> \
     --na <Number of Regulators> \
@@ -87,10 +55,7 @@ For $f_{cov}$, each $\mathit{Position}$ $b \in B$ is assigned the value of the h
 The `jobs` folder contains all bash files to run the algorithms for comparison on the [Goethe-HHLR](https://csc.uni-frankfurt.de/wiki/doku.php?id=public:start) cluster.
 
 ### Scripts
-The scripts folder contains all script files. Note that [Python](https://www.python.org/) must be installed beforehand. The scripts are:
-* Data Generation using `createData.py`
-* Data Compression using `bprTimeCompression.py`, `bprParametersCompression.py` or `bprValuesCompression` to compress logged results into small data that then can be plotted
-* Plotting Data using `timePlot.py`, `parametersPlot.py` or `valuesPlot.py`
+The scripts folder contains all script files. Note that [Python](https://www.python.org/) must be installed beforehand. The scripts are mainly used to plot or tabulate results of experiments. 
 
 Installing the necessary python packages can be done via
 ```bash
