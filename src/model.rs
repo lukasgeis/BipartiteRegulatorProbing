@@ -1,12 +1,12 @@
 use std::time::Instant;
 
+use ez_bitset::bitset::*;
 use itertools::Itertools;
 use rand::Rng;
-use ez_bitset::bitset::*;
 
 use crate::distributions::*;
 
-pub const NUM_TOP_TRIPLES: usize = 10;
+pub const NUM_TOP_TUPLES: usize = 10;
 
 #[derive(Debug, Clone)]
 pub struct BipartiteRegulatorProbing {
@@ -25,7 +25,11 @@ pub struct BipartiteRegulatorProbing {
 impl BipartiteRegulatorProbing {
     pub fn new(na: usize, nb: usize, vs: usize, edges: Vec<Vec<WeightedDistribution>>) -> Self {
         Self {
-            na, nb, vs, edges, non_adaptive_cov_policies: Vec::new()
+            na,
+            nb,
+            vs,
+            edges,
+            non_adaptive_cov_policies: Vec::new(),
         }
     }
 
@@ -189,15 +193,24 @@ impl<'a> Instance<'a> {
         greedy_cov_values.push(0);
 
         for _ in 0..bpr.get_na() {
-            let (inc, argmax): (usize, usize) = chosen_regulators.iter().map(|a| -> (usize, usize) {
-                ((0..bpr.get_nb()).filter_map(|b| {
-                    if realizations[a][b] > current_values[b] {
-                        Some(realizations[a][b] - current_values[b])
-                    } else {
-                        None
-                    }
-                }).sum(), a)
-            }).max().unwrap();
+            let (inc, argmax): (usize, usize) = chosen_regulators
+                .iter()
+                .map(|a| -> (usize, usize) {
+                    (
+                        (0..bpr.get_nb())
+                            .filter_map(|b| {
+                                if realizations[a][b] > current_values[b] {
+                                    Some(realizations[a][b] - current_values[b])
+                                } else {
+                                    None
+                                }
+                            })
+                            .sum(),
+                        a,
+                    )
+                })
+                .max()
+                .unwrap();
 
             greedy_cov_values.push(*greedy_cov_values.last().unwrap() + inc);
             chosen_regulators.unset_bit(argmax);
@@ -208,7 +221,12 @@ impl<'a> Instance<'a> {
             })
         }
 
-        Self { bpr, realizations, greedy_cov_values, opt_time: timer.elapsed().as_secs_f64() }
+        Self {
+            bpr,
+            realizations,
+            greedy_cov_values,
+            opt_time: timer.elapsed().as_secs_f64(),
+        }
     }
 
     /// Get the BPR-model
@@ -236,9 +254,15 @@ impl<'a> Instance<'a> {
     #[inline]
     pub fn eval_policy(&self, policy: &[usize], l: usize) -> usize {
         if policy.len() == l {
-            return (0..self.bpr.get_nb()).map(|b| {
-                policy.iter().map(|a| self.realizations[*a][b]).max().unwrap_or(0)
-            }).sum();
+            return (0..self.bpr.get_nb())
+                .map(|b| {
+                    policy
+                        .iter()
+                        .map(|a| self.realizations[*a][b])
+                        .max()
+                        .unwrap_or(0)
+                })
+                .sum();
         }
 
         let mut current_values: Vec<usize> = vec![0; self.bpr.get_nb()];
@@ -246,15 +270,24 @@ impl<'a> Instance<'a> {
         let mut chosen_regulators = BitSet::new_all_set(policy.len());
 
         for _ in 0..l {
-            let (inc, argmax): (usize, usize) = chosen_regulators.iter().map(|a| -> (usize, usize) {
-                ((0..self.bpr.get_nb()).filter_map(|b| {
-                    if self.realizations[a][b] > current_values[b] {
-                        Some(self.realizations[a][b] - current_values[b])
-                    } else {
-                        None
-                    }
-                }).sum(), a)
-            }).max().unwrap();
+            let (inc, argmax): (usize, usize) = chosen_regulators
+                .iter()
+                .map(|a| -> (usize, usize) {
+                    (
+                        (0..self.bpr.get_nb())
+                            .filter_map(|b| {
+                                if self.realizations[a][b] > current_values[b] {
+                                    Some(self.realizations[a][b] - current_values[b])
+                                } else {
+                                    None
+                                }
+                            })
+                            .sum(),
+                        a,
+                    )
+                })
+                .max()
+                .unwrap();
 
             greedy_value += inc;
             chosen_regulators.unset_bit(argmax);
@@ -268,33 +301,31 @@ impl<'a> Instance<'a> {
         greedy_value
     }
 
-    pub fn find_top_triples(&self, policy: &[usize]) -> [(usize, usize, usize, usize); NUM_TOP_TRIPLES] {
-        assert!(policy.len() > 3);
+    pub fn find_top_tuples<const NUM: usize>(
+        &self,
+        policy: &[usize],
+    ) -> [([usize; NUM], usize); NUM_TOP_TUPLES] {
+        assert!(policy.len() > NUM);
 
-        let len = policy.len();
+        let mut res = [([0; NUM], 0); NUM_TOP_TUPLES];
 
-        let mut res = [(0, 0, 0, 0); NUM_TOP_TRIPLES];
-        
-        for i in 0..len {
-            for j in (i + 1)..len {
-                for k in (j + 1)..len {
-                    let pi = policy[i];
-                    let pj = policy[j];
-                    let pk = policy[k];
+        for regs in (0..policy.len()).array_combinations::<NUM>() {
+            let val: usize = (0..self.bpr.get_nb())
+                .map(|b| {
+                    regs.iter()
+                        .map(|a| self.realizations[policy[*a]][b])
+                        .max()
+                        .unwrap_or(0)
+                })
+                .sum();
 
-                    let val: usize = (0..self.bpr.get_nb()).map(|b| {
-                        self.realizations[pi][b].max(self.realizations[pj][b]).max(self.realizations[pk][b])
-                    }).sum();
-
-                    if val > res[0].3 {
-                        insert_in_place(&mut res, (pi, pj, pk, val), 0);
-                    } else {
-                        for l in 1..NUM_TOP_TRIPLES {
-                            if res[l - 1].3 >= val && val > res[l].3 {
-                                insert_in_place(&mut res, (pi, pj, pk, val), l);
-                                break;
-                            }
-                        }
+            if val > res[0].1 {
+                insert_in_place(&mut res, (regs, val), 0);
+            } else {
+                for i in 1..NUM_TOP_TUPLES {
+                    if res[i - 1].1 >= val && val > res[i].1 {
+                        insert_in_place(&mut res, (regs, val), i);
+                        break;
                     }
                 }
             }
@@ -303,12 +334,13 @@ impl<'a> Instance<'a> {
         res
     }
 
-    pub fn top_opt_triples(&self) -> [(usize, usize, usize, usize); NUM_TOP_TRIPLES] {
-        let all_regulators = (0..self.bpr.get_na()).collect_vec(); 
-        self.find_top_triples(&all_regulators)
+    pub fn top_opt_tuples<const NUM: usize>(&self) -> [([usize; NUM], usize); NUM_TOP_TUPLES] {
+        let all_regulators = (0..self.bpr.get_na()).collect_vec();
+        self.find_top_tuples(&all_regulators)
     }
 }
 
+#[inline(always)]
 fn insert_in_place<T>(array: &mut [T], value: T, index: usize) {
     array[index..].rotate_right(1);
     array[index] = value;
@@ -427,7 +459,7 @@ impl<'a> ProbeMaxInstance<'a> {
             .collect();
 
         let timer = Instant::now();
-        
+
         // Sorted Realizations based on value
         let mut sorted_realizations = realizations.clone();
         sorted_realizations.sort_by(|a, b| b.cmp(a));
@@ -485,6 +517,9 @@ impl<'a> ProbeMaxInstance<'a> {
             .collect();
         non_adap_realizations.sort_by(|a, b| b.cmp(a));
 
-        (non_adap_realizations.into_iter().take(l).sum(), self.pm.get_policy_time() + timer.elapsed().as_secs_f64())
+        (
+            non_adap_realizations.into_iter().take(l).sum(),
+            self.pm.get_policy_time() + timer.elapsed().as_secs_f64(),
+        )
     }
 }

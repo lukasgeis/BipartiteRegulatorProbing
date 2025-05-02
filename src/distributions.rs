@@ -8,8 +8,6 @@ use rand::Rng;
 
 use statrs::distribution::{Discrete, Poisson};
 
-
-
 /// Extends `WeightedSampling` by also storing the individual probabilities and expected values
 /// to allow for computation with those as well as sampling.
 #[derive(Debug, Clone)]
@@ -37,12 +35,11 @@ impl WeightedDistribution {
             sum
         };
 
-        let exact_probabilities: Vec<f64> = weights
-            .iter()
-            .map(|w| w / total_weight)
-            .collect();
+        let exact_probabilities: Vec<f64> = weights.iter().map(|w| w / total_weight).collect();
 
-        let sample_probs: Vec<f64> = (0..num_samples).map(|_| rng.gen_range(0.0..=1.0)).collect();
+        let sample_probs: Vec<f64> = (0..num_samples)
+            .map(|_| rng.random_range(0.0..=1.0))
+            .collect();
         let mut samples: Vec<usize> = vec![0; num_samples];
 
         let mut cum_prob = Vec::with_capacity(n);
@@ -86,10 +83,7 @@ impl WeightedDistribution {
             sum
         };
 
-        let exact_probabilities: Vec<f64> = weights
-            .iter()
-            .map(|w| w / total_weight)
-            .collect();
+        let exact_probabilities: Vec<f64> = weights.iter().map(|w| w / total_weight).collect();
 
         let mut cum_prob = Vec::with_capacity(n);
         let mut cum_expe = Vec::with_capacity(n);
@@ -229,15 +223,17 @@ impl WeightedDistribution {
             })
             .collect();
 
-        let samples: Vec<usize> = (0..dist[0].num_samples()).map(|i| {
-            let mut max = 0usize;
-            for d in dist {
-                if d.get_sample(i) > max {
-                    max = d.get_sample(i);
+        let samples: Vec<usize> = (0..dist[0].num_samples())
+            .map(|i| {
+                let mut max = 0usize;
+                for d in dist {
+                    if d.get_sample(i) > max {
+                        max = d.get_sample(i);
+                    }
                 }
-            }
-            max
-        }).collect();
+                max
+            })
+            .collect();
 
         Self::new_without_rng(&weights, samples)
     }
@@ -275,29 +271,30 @@ impl WeightedDistribution {
             all_weights = new_weights;
         }
 
-        let samples: Vec<usize> = (0..dist[0].num_samples()).map(|i| {
-            let mut sum = 0usize;
-            for d in dist {
-                sum += d.get_sample(i);
-            }
-            sum
-        }).collect();
+        let samples: Vec<usize> = (0..dist[0].num_samples())
+            .map(|i| {
+                let mut sum = 0usize;
+                for d in dist {
+                    sum += d.get_sample(i);
+                }
+                sum
+            })
+            .collect();
 
         Self::new_without_rng(&all_weights[0], samples)
     }
 }
 
-
 /// Creates a vector of random weights between 0.0 and 1.0
 #[inline]
 pub fn create_random_weights<R: Rng>(rng: &mut R, n: usize) -> Vec<f64> {
-    (0..n).map(|_| rng.gen_range(0.1..=10.0)).collect()
+    (0..n).map(|_| rng.random_range(0.1..=10.0)).collect()
 }
 
 /// Creates a list of weights mirroring a Poisson-Distribution up to a fixed length `n`.
 #[inline]
 pub fn create_poisson_weights<R: Rng>(rng: &mut R, n: usize) -> Vec<f64> {
-    let lambda = rng.gen_range(0.5..=2.5);
+    let lambda = rng.random_range(0.5..=2.5);
     let poisson = Poisson::new(lambda).unwrap();
 
     let mut total_weight = 0.0;
