@@ -12,7 +12,7 @@ RANDOM_GENES="tf_networks_data/random_genes.txt"
 
 ITERATIONS=10
 
-for LVAL in 3 4 
+for LVAL in 3 4 5 6 7 8 9 10 
 do
     $BINARY --file $LEUKEMIA -k 50 -i $ITERATIONS -l $LVAL --noopt >> "${OUTPUTDIR}/leukemia_${LVAL}.json" &
     $BINARY --file $LEUKEMIA_SHUFFLED -k 50 -i $ITERATIONS -l $LVAL --noopt >> "${OUTPUTDIR}/leukemia_shuffled_${LVAL}.json" &
