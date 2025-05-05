@@ -320,11 +320,11 @@ impl<'a> Instance<'a> {
                 .sum();
 
             if val > res[0].1 {
-                insert_in_place(&mut res, (regs, val), 0);
+                insert_in_place(&mut res, (regs.map(|a| policy[a]), val), 0);
             } else {
                 for i in 1..NUM_TOP_TUPLES {
                     if res[i - 1].1 >= val && val > res[i].1 {
-                        insert_in_place(&mut res, (regs, val), i);
+                        insert_in_place(&mut res, (regs.map(|a| policy[a]), val), i);
                         break;
                     }
                 }
