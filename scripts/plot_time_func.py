@@ -77,6 +77,7 @@ ax[0][3].set_title(r'$\ell = \frac{4}{4}k$', fontsize=17)
 ax[2][0].set_xlabel("")
 ax[2][1].set_xlabel("")
 ax[2][2].set_xlabel("")
+ax[2][3].set_xlabel("")
 
 ax[0][0].set_ylabel(r'$k = \frac{1}{4}n_A$', fontsize=17)
 ax[1][0].set_ylabel(r'$k = \frac{2}{4}n_A$', fontsize=17)

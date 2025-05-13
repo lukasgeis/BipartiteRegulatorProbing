@@ -135,7 +135,7 @@ fig.text(0.52, 0.06, r'$n_{\mathcal{A}}$', ha="center", fontsize=25)
 fig.text(
     0.025,
     0.5,
-    r'$val_{ALG} / val_{OPT}$',
+    r'$val_{ALG} / val_{Off}$',
     va="center",
     rotation="vertical",
     fontsize=25
