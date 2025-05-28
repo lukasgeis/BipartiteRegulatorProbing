@@ -24,6 +24,15 @@ def getGoalAlgo(row):
     else:
         goal = r'\textsc{Cov}'
 
+        if row["algo"] == "AMP":
+            algo = r'\textsc{AmpCov}'
+        elif row["algo"] == "NAMP":
+            algo = r'\textsc{NampCov}'
+        else:
+            algo = r'None'
+
+        return goal + " - " + algo
+
     if row["algo"] == "AMP":
         algo = r'\textsc{Amp}'
     elif row["algo"] == "NAMP":

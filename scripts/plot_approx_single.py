@@ -16,9 +16,9 @@ args = parser.parse_args()
 
 def getGoalAlgo(row):
     if row["algo"] == "AMP":
-        algo = r'\textsc{Amp}'
+        algo = r'\textsc{AmpCov}'
     elif row["algo"] == "NAMP":
-        algo = r'\textsc{Namp}'
+        algo = r'\textsc{NampCov}'
     else:
         algo = r'None'
 

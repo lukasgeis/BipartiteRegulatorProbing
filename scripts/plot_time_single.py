@@ -26,8 +26,8 @@ data[["kk", "ll"]] = data[["kk", "ll"]].astype(int)
 data["time"] = data["time"] * 1000000
 
 algo = {
-    "AMP": r"\textsc{Amp}",
-    "NAMP": r"\textsc{Namp}",
+    "AMP": r"\textsc{AmpCov}",
+    "NAMP": r"\textsc{NampCov}",
 }
 
 data.replace({"algo": algo}, inplace=True)

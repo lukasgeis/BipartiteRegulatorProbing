@@ -10,6 +10,7 @@ plt.rcParams['figure.figsize'] = 15, 8
 parser = argparse.ArgumentParser()
 parser.add_argument("-n", "--network", type=str, required=True)
 parser.add_argument("-u", "--uniform", type=str, required=True)
+parser.add_argument('--cov', action=argparse.BooleanOptionalAction)
 parser.add_argument("-o", "--out", type=str, required=True)
 
 args = parser.parse_args()
@@ -38,6 +39,15 @@ settings = {
     "NAMP - Network": r"\textsc{Namp - Network}",
 
 }
+
+if args.cov:
+    settings = {
+        "AMP - Uniform": r"\textsc{AmpCov - Uniform}",
+        "NAMP - Uniform": r"\textsc{NampCov - Uniform}",
+        "AMP - Network": r"\textsc{AmpCov - Network}",
+        "NAMP - Network": r"\textsc{NampCov - Network}",
+
+    }
 
 data.replace({"setting": settings}, inplace=True)
 
