@@ -7,10 +7,10 @@ the edge weight is set to zero.
 Here, we provide scripts to generate TF-gene networks also from custom data. The regions in which the TFs can potentially bind
 need to be provided, as well as an interaction file, that tells which regions map to which gene.
 
-The networks used in the manuscript can be found in [Tcell_networks](https://github.com/lukasgeis/BipartiteRegulatorProbing/tf_gene_networks/Tcell_networks/) 
+The networks used in the manuscript can be found in [Tcell_networks](https://github.com/lukasgeis/BipartiteRegulatorProbing/tree/main/tf_gene_networks/Tcell_networks) 
 
 ## Installation
-For the required packages, see the [requirements file](https://github.com/lukasgeis/BipartiteRegulatorProbing/tf_gene_networks/requirements.txt). You can install them via
+For the required packages, see the [requirements file](https://github.com/lukasgeis/BipartiteRegulatorProbing/blob/main/tf_gene_networks/requirements.txt). You can install them via
 ```bash
 pip3 install -r scripts/requirements
 ```
@@ -42,8 +42,8 @@ We provide a toy example that you can run:
 ```bash
 python3 TFGeneNetworks.py ExampleRun_JSON.txt
 ```
-From the example you can see how a JSON file should look like. The expected output of the toy run is in [ExampleRun/](https://github.com/lukasgeis/BipartiteRegulatorProbing/tf_gene_networks/ExampleRun/).
-The input files used for the toy run are in [ExampleData/](https://github.com/lukasgeis/BipartiteRegulatorProbing/tf_gene_networks/ExampleData/).
+From the example you can see how a JSON file should look like. The expected output of the toy run is in [ExampleRun/](https://github.com/lukasgeis/BipartiteRegulatorProbing/tree/main/tf_gene_networks/ExampleRun).
+The input files used for the toy run are in [ExampleData/](https://github.com/lukasgeis/BipartiteRegulatorProbing/tree/main/tf_gene_networks/ExampleData).
 
 A file called 'TFGeneNet.txt.gz' will be generated, that is a matrix of Genes*TFs filled with the edge weight. There is an additional first columns called '#CREs' that holds the number of regions interacting with the gene.
 To get the network for your data, just provide a JSON file with your paths and options. The network will be generated for 
