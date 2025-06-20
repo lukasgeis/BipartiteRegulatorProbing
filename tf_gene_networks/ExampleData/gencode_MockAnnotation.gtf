@@ -1,0 +1,7 @@
+##description: evidence-based annotation of the human genome (GRCh38), version 38 (Ensembl 104)
+##provider: GENCODE
+##contact: gencode-help@ebi.ac.uk
+##format: gtf
+##date: 2021-03-12
+chr1	HAVANA	gene	500	2000	.	+	.	gene_id "ENSG0000MOCK1"; gene_type "protein_coding"; gene_name "CH507-9B2.2"; level 2; havana_gene "OTTHUMG00000189354.1";
+chr1	HAVANA	gene	1000	2000	.	+	.	gene_id "ENSG0000MOCK2"; gene_type "protein_coding"; gene_name "CH507-9B2.2"; level 2; havana_gene "OTTHUMG00000189354.1";\

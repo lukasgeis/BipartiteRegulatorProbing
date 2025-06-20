@@ -1,5 +1,8 @@
 # BipartiteRegulatorProbing
 
+On this page, we explain how to use the different algorithms on a given network. For the construction of TF-gene networks, see the folder
+[tf_gene_networks](https://github.com/lukasgeis/BipartiteRegulatorProbing/tf_gene_networks/) and its README.
+
 We get a complete bipartite graph $G = (A \cup B, A \times B)$ with a set $A$ of $\mathit{Regulators}$ and a set $B$ of $\mathit{Positions}$. Every edge $(a,b) \in A \times B$ has an independent discrete distribution $D_{a,b}$ over the same support $\mathcal{V} :=$ { $0,...,|\mathcal{V}| - 1$ }. We know $D_{a,b}$ but not their edge weight realizations $w_{a,b} \sim D_{a,b}$. We can now $\mathit{probe}$ $k$ $\mathit{Regulators}$ thus revealing their incident edge weights. At the end, we have to choose $\ell$ $\mathit{Regulators}$ among the $\mathit{probed}$ ones to maximize a given set goal function $f$.
 
 ## Usage

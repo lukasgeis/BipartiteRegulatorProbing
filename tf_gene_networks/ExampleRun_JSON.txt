@@ -1,0 +1,11 @@
+{
+  "output_path": "TestExample/",
+  "fimo_src": "fimo",
+  "gtf_file": "ExampleData/gencode_MockAnnotation.gtf",
+  "fasta_file": "ExampleData/fasta_Mock.fa",
+  "pwm_file": "ExampleData/TF_Motifs_Meme_Mock.txt",
+  "open_tfs_only": "False",
+  "peak_file": "ExampleData/Mock_Peaks.bed",
+  "abc_interactions": "ExampleData/Mock_ABCpp_scoredInteractions_c7.txt",
+  "cores": 1
+}
