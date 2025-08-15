@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 pub mod algorithms;
 pub mod distributions;
+pub mod ip;
 pub mod model;
 
 /// Possible GoalFunctions

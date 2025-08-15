@@ -44,6 +44,10 @@ struct Parameters {
 
     #[structopt(long)]
     poisson: bool,
+
+    /// Use the IP-Formulation instead when computing Opt (for Coverage only)
+    #[structopt(long)]
+    ipopt: bool,
 }
 
 #[derive(Serialize)]
@@ -264,18 +268,38 @@ fn eval_cov(params: &Parameters, logfiles: Vec<File>) {
                 let ins = bpr.create_instance(j);
 
                 for opt_l in compute_opt_l_values(params.na) {
-                    let res = Result {
-                        na: params.na,
-                        nb: params.nb,
-                        vs: params.vs,
-                        goal: "COV".to_owned(),
-                        algo: "OPT".to_owned(),
-                        k: params.na,
-                        l: opt_l,
-                        val: ins.get_opt_cov_value(opt_l),
-                        ins_id: i,
-                        iter_id: j,
-                        time: ins.get_opt_cov_time(),
+                    let res = if params.ipopt {
+                        let timer = Instant::now();
+                        let (ip_val, _) = bpr::ip::solve_cov_instance(params.na, params.nb, opt_l, &ins.realizations);
+                        let ip_time = timer.elapsed().as_secs_f64();
+
+                        Result{
+                            na: params.na,
+                            nb: params.nb,
+                            vs: params.vs,
+                            goal: "COV".to_owned(),
+                            algo: "OPT".to_owned(),
+                            k: params.na,
+                            l: opt_l,
+                            val: ip_val,
+                            ins_id: i,
+                            iter_id: j,
+                            time: ip_time,
+                        }
+                    } else {
+                        Result{
+                            na: params.na,
+                            nb: params.nb,
+                            vs: params.vs,
+                            goal: "COV".to_owned(),
+                            algo: "OPT".to_owned(),
+                            k: params.na,
+                            l: opt_l,
+                            val: ins.get_opt_cov_value(opt_l),
+                            ins_id: i,
+                            iter_id: j,
+                            time: ins.get_opt_cov_time(),
+                        }
                     };
                     let _ = writeln!(logfile, "{}", serde_json::to_string(&res).unwrap());
                 }

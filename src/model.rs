@@ -159,7 +159,7 @@ impl BipartiteRegulatorProbing {
 
     /// Create an Instance
     #[inline]
-    pub fn create_instance(&self, instance_index: usize) -> Instance {
+    pub fn create_instance(&self, instance_index: usize) -> Instance<'_> {
         Instance::new(self, instance_index)
     }
 }
@@ -167,7 +167,7 @@ impl BipartiteRegulatorProbing {
 #[derive(Debug, Clone)]
 pub struct Instance<'a> {
     bpr: &'a BipartiteRegulatorProbing,
-    realizations: Vec<Vec<usize>>,
+    pub realizations: Vec<Vec<usize>>,
     greedy_cov_values: Vec<usize>,
     opt_time: f64,
 }
@@ -433,7 +433,7 @@ impl ProbeMax {
 
     /// Create an Instance
     #[inline]
-    pub fn create_instance(&self, instance_index: usize) -> ProbeMaxInstance {
+    pub fn create_instance(&self, instance_index: usize) -> ProbeMaxInstance<'_> {
         ProbeMaxInstance::new(self, instance_index)
     }
 }
