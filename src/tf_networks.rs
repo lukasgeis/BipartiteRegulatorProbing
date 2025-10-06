@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{BufRead, BufReader, Error, ErrorKind},
+    io::{BufRead, BufReader, Error},
     path::PathBuf,
     time::Instant,
 };
@@ -146,17 +146,11 @@ fn parse_file(
     path: &PathBuf,
     num: usize,
 ) -> Result<(Names, Names, BipartiteRegulatorProbing), Error> {
-    let error = |msg| Err(Error::new(ErrorKind::Other, msg));
+    let error = |msg| Err(Error::other(msg));
 
     let mut lines = BufReader::new(File::open(path)?)
         .lines()
-        .filter_map(|x| -> Option<String> {
-            if let Ok(line) = x {
-                Some(line)
-            } else {
-                None
-            }
-        });
+        .filter_map(|x| -> Option<String> { x.ok() });
 
     let tf_names: Vec<String> = if let Some(header) = lines.next() {
         header.split('\t').skip(2).map(|s| s.to_string()).collect()

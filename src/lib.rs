@@ -1,4 +1,5 @@
 #![feature(binary_heap_into_iter_sorted)]
+#![allow(clippy::needless_range_loop)]
 
 use std::str::FromStr;
 

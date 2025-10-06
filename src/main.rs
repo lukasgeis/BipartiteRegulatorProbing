@@ -270,10 +270,15 @@ fn eval_cov(params: &Parameters, logfiles: Vec<File>) {
                 for opt_l in compute_opt_l_values(params.na) {
                     let res = if params.ipopt {
                         let timer = Instant::now();
-                        let (ip_val, _) = bpr::ip::solve_cov_instance(params.na, params.nb, opt_l, &ins.realizations);
+                        let ip_val = bpr::ip::solve_cov_instance(
+                            params.na,
+                            params.nb,
+                            opt_l,
+                            &ins.realizations,
+                        );
                         let ip_time = timer.elapsed().as_secs_f64();
 
-                        Result{
+                        Result {
                             na: params.na,
                             nb: params.nb,
                             vs: params.vs,
@@ -287,7 +292,7 @@ fn eval_cov(params: &Parameters, logfiles: Vec<File>) {
                             time: ip_time,
                         }
                     } else {
-                        Result{
+                        Result {
                             na: params.na,
                             nb: params.nb,
                             vs: params.vs,
