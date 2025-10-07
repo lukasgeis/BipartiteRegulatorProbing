@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OUTPUTDIR="temp_data"
+OUTPUTDIR="data"
 
 ITERATIONS=100
 INSTANCES=10 
