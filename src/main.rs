@@ -85,10 +85,8 @@ fn main() -> std::io::Result<()> {
         })
         .collect();
 
-    println!("{}", num_cpus::get());
-
     rayon::ThreadPoolBuilder::new()
-        .num_threads(num_cpus::get())
+        .num_threads(num_cpus::get_physical())
         .build_global()
         .unwrap_or_else(|e| println!("Failed to set the number of threads used by rayon: {}", e));
 
