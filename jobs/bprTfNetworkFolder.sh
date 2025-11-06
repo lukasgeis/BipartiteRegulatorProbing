@@ -11,7 +11,8 @@ ITERATIONS=500
 for KVAL in 30 40 50
 do
     for FILE in "$FOLDER"/*; do
-        $BINARY --file $FILE -k $KVAL -i $ITERATIONS >> "$OUTPUTDIR/$FILE.json" &
+        FILENAME=$(basename "$FILE")
+        $BINARY --file "$FOLDER/$FILENAME" -k $KVAL -i $ITERATIONS >> "$OUTPUTDIR/$FILENAME.json" &
     done
 
     wait
