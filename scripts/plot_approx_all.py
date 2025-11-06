@@ -12,6 +12,7 @@ parser.add_argument("-m", "--max", type=str, required=True)
 parser.add_argument("-s", "--sum", type=str, required=True)
 parser.add_argument("-c", "--cov", type=str, required=True)
 parser.add_argument("-o", "--out", type=str, required=True)
+parser.add_argument('--vert', action=argparse.BooleanOptionalAction)
 
 args = parser.parse_args()
 
@@ -165,5 +166,11 @@ fig.text(
     rotation="vertical",
     fontsize=25
 )
+
+if args.vert:
+    for k in range(3):
+        for l in range(4):
+            mid = (ax[k, l].get_xlim()[0] + ax[k, l].get_xlim()[1]) / 2
+            ax[k, l].axvline(mid, color=sns.color_palette("colorblind")[2], linestyle='--')
 
 plt.savefig(f"{args.out}.pdf", format="pdf", bbox_inches="tight")

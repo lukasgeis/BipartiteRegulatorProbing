@@ -50,8 +50,15 @@ do
 done
 
 # Cov Network
-for NUM in $(seq 1 $END) 
+for NUM in $(seq 1 10) 
 do 
     echo "Run COV - Network - $NUM"
     ./target/release/bpr --log "$OUTPUTDIR/cov/network" --na $((16 * $NUM)) --nb $((400 * $NUM)) --vs 10 $COMMON --goal COV --poisson --ipopt
+done
+
+# Cov Network
+for NUM in $(seq 11 $END) 
+do 
+    echo "Run COV - Network - $NUM"
+    ./target/release/bpr --log "$OUTPUTDIR/cov/network" --na $((16 * $NUM)) --nb $((400 * $NUM)) --vs 10 $COMMON --goal COV --poisson
 done
